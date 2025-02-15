@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "674156983431",
+    "project_id": "adhd-assistant-43bcf",
+    "storage_bucket": "adhd-assistant-43bcf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:674156983431:android:3c3a628b1dc1196ce1f422",
+        "android_client_info": {
+          "package_name": "com.castillo.adhdassistant"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA9EBWwX1HDOm3UC6E7SqaIN-0s0zOWocg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
