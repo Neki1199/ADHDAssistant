@@ -1,5 +1,7 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, collection, addDoc } from 'firebase/firestore';
+import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 // Optionally import the services that you want to use
 // import {...} from 'firebase/auth';
@@ -12,7 +14,7 @@ import { getFirestore } from 'firebase/firestore';
 const firebaseConfig = {
   apiKey: 'AIzaSyA9EBWwX1HDOm3UC6E7SqaIN-0s0zOWocg',
   authDomain: 'adhd-assistant-43bcf.firebaseapp.com',
-  databaseURL: 'https://adhd-assistant-43bcf.firebaseio.com',
+  //databaseURL: 'https://adhd-assistant-43bcf.firebaseio.com',
   projectId: 'adhd-assistant-43bcf',
   storageBucket: 'adhd-assistant-43bcf.firebasestorage.app',
   //messagingSenderId: 'sender-id',
@@ -20,9 +22,11 @@ const firebaseConfig = {
   //measurementId: 'G-measurement-id',
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+export const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage)});
 
-export { db };
+
 // For more information on how to access Firebase in your project,
 // see the Firebase documentation: https://firebase.google.com/docs/web/setup#access-firebase
