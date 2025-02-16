@@ -1,51 +1,88 @@
-import { Text, SafeAreaView, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { Text, View, Modal, SafeAreaView, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import React, { useState } from 'react';
-import { auth, db } from '../../firebaseConfig';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../firebaseConfig';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { TextInput } from 'react-native-gesture-handler';
-import { collection, addDoc } from 'firebase/firestore';
+import { CommonActions } from '@react-navigation/native';
 
 export default function SignInScreen({ navigation }) {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
+    const [resetEmail, setResetEmail] = useState("")
 
+    // to sign in
     const signIn = async () => {
-        if (!email || !password){
-            alert("Please enter email and password");
-            return;
-        }
+      try{
+        // authenticate user
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
 
-        try{
-            const user = await signInWithEmailAndPassword(auth, email, password);
-            if(user) navigation.replace("Home");
-          } catch (error) {
-            console.log(error)
-            alert('Sign in failed: ' + error.message);
-        } 
+        // check if user has verified the email
+        if(!user.emailVerified) {
+          Alert.alert(
+            "⚠️ Ups!",
+            "Please verify your email before logging in",
+            [{ text: "Try Again", style: "default" }]
+          );
+        } else {
+          // only go home if email is verified
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [{name:"Home"}] // home will be only screen in the stack (so users cannot go back to login)
+            })
+          );
+        }
+      } catch (error) {
+        if (!email || !password){
+          Alert.alert(
+            "⚠️ Ups!",
+            "Enter email and password",
+            [{ text: "Try Again", style: "default" }]
+          );
+        } else if(error.code === "auth/invalid-credential"){
+          Alert.alert(
+            "⚠️ Ups!",
+            "Incorrect email or password",
+            [{ text: "Try Again", style: "default" }]
+          );
+        } else {
+          Alert.alert(
+            "⚠️ Ups!",
+            "Sign In failed",
+            [{ text: "Try Again", style: "default" }]
+          );
+        }
+      } 
     }
     
+    // the forget password text
+    const forgotPassword = async () => {
+      if(!resetEmail) {
+        Alert.alert(
+          "⚠️ Ups!",
+          "Please enter your email to reset password",
+          [{ text: "Try Again", style: "default" }]
+        );
+      }
 
-    const signUp = async () => {
-        if(!email || !password){
-            alert("Please enter email and password");
-        }
-
-        try{
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-
-            // save user in firestore (email and date creation)
-            await addDoc(collection(db, "users"), {
-                email: user.email,
-                created: new Date(),
-            });
-
-            // go to home screen after success sign up
-            if(userCredential) navigation.replace("Home");
-        } catch (error) {
-            console.log(error)
-            alert('Sign up failed: ' + error.message);
-        } 
+      try{
+        await sendPasswordResetEmail(auth, resetEmail);
+        Alert.alert(
+          "✅ Success!",
+          "Password reset email sent",
+          [{ text: "Close", style: "default" }]
+        );
+        setForgotPasswordVisible(false);
+        setResetEmail("");
+      } catch(error){
+        Alert.alert(
+          "⚠️ Ups!",
+          "Error sending reset email",
+          [{ text: "Try Again", style: "default" }]
+        );
+      }
     }
 
     return (
@@ -63,14 +100,39 @@ export default function SignInScreen({ navigation }) {
               style={styles.input}
               placeholder="Password"
               value={password}
-              onChangeText={setPassword}/>
+              onChangeText={setPassword} secureTextEntry/>
 
           <TouchableOpacity style={[styles.button, styles.btnLogin]} onPress={signIn}>
             <Text style={styles.btnTextLogIn}>Log In</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, styles.btnCreate]} onPress={signUp}>
+          <TouchableOpacity style={[styles.button, styles.btnCreate]} onPress={()=> navigation.navigate("SignUp")}>
             <Text style={styles.btnText}>Create Account</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity style={styles.forgot} onPress={()=> setForgotPasswordVisible(true)}>
+            <Text style={styles.textPassword} >Forgot Password?</Text>
+          </TouchableOpacity>
+
+          <Modal transparent={true} visible={forgotPasswordVisible} animationType="slide">
+            <View style={styles.modalContainer}>
+              <View style={styles.modalInside}>
+                <Text style={styles.modalTitle}>Reset Password</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your email"
+                  value={resetEmail}
+                  onChangeText={setResetEmail}
+                />
+
+                <TouchableOpacity style={[styles.button, styles.btnCreate]} onPress={forgotPassword}>
+                  <Text style={styles.btnText}>Send Reset Link</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={()=> setForgotPasswordVisible(false)}>
+                  <Text style={styles.closeModal}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
         </SafeAreaView>
     )
 }
@@ -131,5 +193,37 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '40%',
     marginBottom: 20
+  },
+  forgot: {
+    marginTop: 10,
+    textDecorationLine: 'underline'
+  },
+  textPassword: {
+    color: '#6D67BD',
+    fontSize: 12,
+    fontWeight: '600'
+  },
+  modalContainer:{
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)'
+  },
+  modalInside: {
+    width: '90%',
+    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    alignItems: 'center'
+  },
+  modalTitle: {
+    fontSize: 20,
+    marginBottom: 10,
+    fontWeight: '800',
+    color: '#4B4697'
+  },
+  closeModal: {
+    color: '#4B4697',
+    textDecorationLine: 'underline'
   }
 });

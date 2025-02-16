@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import SignInScreen from '../screens/SignInScreen';
+import SignUpScreen from '../screens/SignUpScreen';
 import Tasks from '../screens/TasksScreen';
 import Emotions from '../screens/EmotionsScreen';
 import Meals from '../screens/MealsScreen';
@@ -25,12 +26,13 @@ function AppNavigator(){
     );
 }
 
-// Stack Navigot (SignIn, then tabs)
+// app stack
 export default function App(){
     return(
         <NavigationContainer>
             <Stack.Navigator>
                 <Stack.Screen name="SignIn" component={SignInScreen} options={{headerShown: false}}/>
+                <Stack.Screen name="SignUp" component={SignUpScreen} options={{title: "Sign Up"}}/>
                 <Stack.Screen name="Home" component={AppNavigator} options={{headerShown: false}}/>
             </Stack.Navigator>
         </NavigationContainer>
