@@ -1,9 +1,10 @@
 import { Text, SafeAreaView, TouchableOpacity, Alert, StyleSheet, Image } from 'react-native';
 import React, { useState } from 'react';
 import { auth, db } from '../../firebaseConfig';
-import { createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
+import { updateProfile, createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { TextInput } from 'react-native-gesture-handler';
 import { collection, addDoc } from 'firebase/firestore';
+
 
 export default function SignUpScreen({ navigation }) {
     const [name, setName] = useState("");
@@ -11,17 +12,24 @@ export default function SignUpScreen({ navigation }) {
     const [password, setPassword] = useState("");
 
     const signUp = async () => {
-      if(!name || !email || !password){
+      if(!name || !password || !email){
         Alert.alert(
           "⚠️ Ups!",
-          "Enter all fields",
+          "Please enter all fields",
           [{ text: "Try Again", style: "default" }]
         );
+        return; // to not execute anything else
       }
-    
+
       try{
+        // create user
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
+
+        // set name in auth to then display in home
+        await updateProfile(user, {
+          displayName: name
+        });
 
         // save user in firestore (email and date creation)
         await addDoc(collection(db, "users"), {
@@ -31,21 +39,28 @@ export default function SignUpScreen({ navigation }) {
         });
 
         // send email verification
+        await sendEmailVerification(user);
+        // confirm success
         Alert.alert(
           "✅ Succes!",
           "Verification email sent.\nPlease check your inbox to continue.",
           [{ text: "Close", style: "default" }]
         );
 
-        // go to home screen after success sign up
+        // go to sign in screen after success sign up
         if(userCredential) navigation.navigate("SignIn");
       } catch (error) {
-        console.log(error);
         if(error.code === "auth/email-already-in-use"){
           Alert.alert(
             "⚠️ Ups!",
             "Email already in use",
             [{ text: "Close", style: "default" }]
+          );
+        } else if(error.code === "auth/weak-password"){
+          Alert.alert(
+            "⚠️ Ups!",
+            "Password should be at least 6 characters",
+            [{ text: "Try Again", style: "default" }]
           );
         } else {
           Alert.alert(

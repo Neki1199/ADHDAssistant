@@ -3,16 +3,17 @@ import React, { useState } from 'react';
 import { auth } from '../../firebaseConfig';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { TextInput } from 'react-native-gesture-handler';
-import { CommonActions } from '@react-navigation/native';
 
 export default function SignInScreen({ navigation }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
     const [resetEmail, setResetEmail] = useState("")
+    const [ loading, setLoading ] = useState(false); // loading if user already sign in
 
     // to sign in
     const signIn = async () => {
+      setLoading(true);
       try{
         // authenticate user
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -25,14 +26,8 @@ export default function SignInScreen({ navigation }) {
             "Please verify your email before logging in",
             [{ text: "Try Again", style: "default" }]
           );
-        } else {
-          // only go home if email is verified
-          navigation.dispatch(
-            CommonActions.reset({
-              index: 0,
-              routes: [{name:"Home"}] // home will be only screen in the stack (so users cannot go back to login)
-            })
-          );
+        } else { // go to home by reseting the stack
+          navigation.replace("Home");
         }
       } catch (error) {
         if (!email || !password){
@@ -48,13 +43,16 @@ export default function SignInScreen({ navigation }) {
             [{ text: "Try Again", style: "default" }]
           );
         } else {
+          console.log(error);
           Alert.alert(
             "⚠️ Ups!",
             "Sign In failed",
             [{ text: "Try Again", style: "default" }]
           );
         }
-      } 
+      } finally {
+        setLoading(false);
+      }
     }
     
     // the forget password text
@@ -102,8 +100,8 @@ export default function SignInScreen({ navigation }) {
               value={password}
               onChangeText={setPassword} secureTextEntry/>
 
-          <TouchableOpacity style={[styles.button, styles.btnLogin]} onPress={signIn}>
-            <Text style={styles.btnTextLogIn}>Log In</Text>
+          <TouchableOpacity style={[styles.button, styles.btnLogin]} onPress={signIn} disabled={loading}>
+            <Text style={styles.btnTextLogIn}>{loading ? "Logging In..." : "Log In"}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.button, styles.btnCreate]} onPress={()=> navigation.navigate("SignUp")}>
             <Text style={styles.btnText}>Create Account</Text>
