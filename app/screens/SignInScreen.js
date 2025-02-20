@@ -1,7 +1,7 @@
 import { Text, View, Modal, SafeAreaView, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { auth } from '../../firebaseConfig';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { TextInput } from 'react-native-gesture-handler';
 
 export default function SignInScreen({ navigation }) {
@@ -9,7 +9,18 @@ export default function SignInScreen({ navigation }) {
     const [password, setPassword] = useState("");
     const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
     const [resetEmail, setResetEmail] = useState("")
-    const [ loading, setLoading ] = useState(false); // loading if user already sign in
+    const [loading, setLoading] = useState(false); // loading if user already sign in
+
+    useEffect (() => {
+        const stayConnected = onAuthStateChanged(auth, (currentUser) => {
+          if(currentUser){
+            navigation.replace("Home");
+          } else {
+            navigation.navigate("SignIn");
+          }
+        });
+        return () => stayConnected();
+    }, [navigation]) // TODO: I don't know if that works to stay connected
 
     // to sign in
     const signIn = async () => {
@@ -26,7 +37,7 @@ export default function SignInScreen({ navigation }) {
             "Please verify your email before logging in",
             [{ text: "Try Again", style: "default" }]
           );
-        } else { // go to home by reseting the stack
+        } else { // go home
           navigation.replace("Home");
         }
       } catch (error) {
