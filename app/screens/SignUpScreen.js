@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { auth, db } from '../../firebaseConfig';
 import { updateProfile, createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { TextInput } from 'react-native-gesture-handler';
-import { collection, addDoc } from 'firebase/firestore';
+import { setDoc, doc } from 'firebase/firestore';
 
 
 export default function SignUpScreen({ navigation }) {
@@ -11,6 +11,21 @@ export default function SignUpScreen({ navigation }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
+    const allEmotions = [ // store emotions for the new user
+      { emoji: "😄", name: "Happy"},
+      { emoji: "😞", name: "Sad"},
+      { emoji: "😐", name: "Neutral"},
+      { emoji: "😯", name: "Surprised"},
+      { emoji: "😡", name: "Angry"},
+      { emoji: "😴", name: "Tired"},
+      { emoji: "🤨", name: "Confused"},
+      { emoji: "😎", name: "Proud"},
+      { emoji: "🤦", name: "Disappointed"},
+      { emoji: "😰", name: "Nervous"},
+      { emoji: "😒", name: "Jealous"},
+      { emoji: "🤗", name: "Excited"},
+    ]
+    
     const signUp = async () => {
       if(!name || !password || !email){
         Alert.alert(
@@ -31,19 +46,22 @@ export default function SignUpScreen({ navigation }) {
           displayName: name
         });
 
+        const userRef = doc(db, "users", user.uid);
         // save user in firestore (email and date creation)
-        await addDoc(collection(db, "users"), {
+        await setDoc(userRef, {
             name: name,
             email: user.email,
             created: new Date(),
         });
 
+        await setDoc(userRef, {emotions: allEmotions}, {merge: true});
+
         // send email verification
         await sendEmailVerification(user);
         // confirm success
         Alert.alert(
-          "✅ Succes!",
-          "Verification email sent.\nPlease check your inbox to continue.",
+          "✅ Succes",
+          "Verification email sent!\nPlease check your inbox to continue",
           [{ text: "Close", style: "default" }]
         );
 
@@ -63,6 +81,7 @@ export default function SignUpScreen({ navigation }) {
             [{ text: "Try Again", style: "default" }]
           );
         } else {
+          console.log(error);
           Alert.alert(
             "⚠️ Ups!",
             "Sign Up failed",

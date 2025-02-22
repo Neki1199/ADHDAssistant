@@ -1,30 +1,38 @@
-import { Text, View, Modal, SafeAreaView, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
+import { ActivityIndicator, Text, View, Modal, SafeAreaView, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { auth } from '../../firebaseConfig';
 import { onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { TextInput } from 'react-native-gesture-handler';
 
+
 export default function SignInScreen({ navigation }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
-    const [resetEmail, setResetEmail] = useState("")
-    const [loading, setLoading] = useState(false); // loading if user already sign in
+    const [resetEmail, setResetEmail] = useState("");
+    const [checkAuth, setCheckAuth] = useState(true); //track if user is auth
+    const [logginIn, setLogginIn] = useState(false); // loading in login button
 
     useEffect (() => {
         const stayConnected = onAuthStateChanged(auth, (currentUser) => {
           if(currentUser){
-            navigation.replace("Home");
+            if(currentUser.emailVerified){
+              navigation.replace("Home");
+            } else {
+              navigation.navigate("SignIn");
+              setCheckAuth(false); // do not show spinner, go to login
+            }
           } else {
+            setCheckAuth(false);
             navigation.navigate("SignIn");
           }
         });
         return () => stayConnected();
-    }, [navigation]) // TODO: I don't know if that works to stay connected
+    }, [navigation]);
 
     // to sign in
     const signIn = async () => {
-      setLoading(true);
+      setLogginIn(true);
       try{
         // authenticate user
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -37,6 +45,7 @@ export default function SignInScreen({ navigation }) {
             "Please verify your email before logging in",
             [{ text: "Try Again", style: "default" }]
           );
+          return;
         } else { // go home
           navigation.replace("Home");
         }
@@ -62,9 +71,9 @@ export default function SignInScreen({ navigation }) {
           );
         }
       } finally {
-        setLoading(false);
+        setLogginIn(false);
       }
-    }
+    };
     
     // the forget password text
     const forgotPassword = async () => {
@@ -94,6 +103,14 @@ export default function SignInScreen({ navigation }) {
       }
     }
 
+    if(checkAuth){
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6D67BD"/>
+        </View>
+      );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
           <Image 
@@ -111,8 +128,8 @@ export default function SignInScreen({ navigation }) {
               value={password}
               onChangeText={setPassword} secureTextEntry/>
 
-          <TouchableOpacity style={[styles.button, styles.btnLogin]} onPress={signIn} disabled={loading}>
-            <Text style={styles.btnTextLogIn}>{loading ? "Logging In..." : "Log In"}</Text>
+          <TouchableOpacity style={[styles.button, styles.btnLogin]} onPress={signIn} disabled={logginIn}>
+            {logginIn ? <ActivityIndicator size="small" color="#6D67BD"/> : <Text style={styles.btnTextLogIn}>Log In</Text>}
           </TouchableOpacity>
           <TouchableOpacity style={[styles.button, styles.btnCreate]} onPress={()=> navigation.navigate("SignUp")}>
             <Text style={styles.btnText}>Create Account</Text>
@@ -151,8 +168,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingTop: 20,
     backgroundColor: '#FFFFFF'
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: "#FFFFFF"
   },
   title: {
     fontSize: 40,
