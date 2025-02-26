@@ -1,29 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, FlatList, Modal, Alert, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
-import { doc, updateDoc, getDoc, setDoc, arrayUnion, onSnapshot } from '@firebase/firestore';
+import React, { useState } from 'react';
+import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Alert } from 'react-native';
+import { doc, updateDoc, getDoc, setDoc, arrayUnion } from '@firebase/firestore';
 import { db, auth } from "../../firebaseConfig";
 import moment from "moment";
-import { useEmotions } from '../contexts/EmotionContext';
 
 export default function EmotionsHome({ navigation }) { // home emotions emoji
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [note, setNote] = useState("");
   const [visibleModal, setVisibleModal] = useState(false);
-  const { allEmotions, setAllEmotions } = useEmotions();
 
-  useEffect(() => { // to get all emotions stored from user
-    const userID = auth.currentUser?.uid;
-    if (!userID) return; // do nothing!
-
-    const userRef = doc(db, "users", userID);
-
-    const getEmotions = onSnapshot(userRef, (docResult) => { // updates whenever emotions are added, changed or deleted with snapshot
-      if (docResult.exists()) {
-        setAllEmotions(docResult.data().emotions || []);
-      }
-    });
-    return () => getEmotions();
-  }, []);
+  const allEmotions = [
+    { emoji: "🟢", name: "green" },
+    { emoji: "🟠", name: "orange" },
+    { emoji: "🔴", name: "red" },
+  ]
 
   const emotionPressed = (emotion) => {
     // select an emotion and appear a modal to add an optional note
@@ -35,7 +25,7 @@ export default function EmotionsHome({ navigation }) { // home emotions emoji
     const userID = auth.currentUser?.uid;
     if (!userID) return;
     const today = moment().format("DD-MM-YYYY");
-    const time = moment().format("hh:mm A"); // 00:00 AM
+    const time = moment().format("hh:mm:ss A"); // 00:00 AM
 
     // set note to was is written: it is an optional note
     const emotionData = { emoji: emoji.emoji, name: emoji.name, note, time };
@@ -51,13 +41,13 @@ export default function EmotionsHome({ navigation }) { // home emotions emoji
         // create a new document for today's date
         await setDoc(docRef, { emotionsTrack: [emotionData] });
       }
-      Alert.alert(
-        "✅ Success!",
-        "An emotion has been added",
-        [{ text: "Close", style: "default" }]
-      );
     } catch (error) {
-      console.error("Error storing emotiond: ", error); //change this after testing
+      Alert.alert(
+        "⚠️ Ups!",
+        "Error adding emotion",
+        [{ text: "Try Again", style: "default" }]
+      );
+
     }
     setVisibleModal(false);
     setNote("");
@@ -67,28 +57,20 @@ export default function EmotionsHome({ navigation }) { // home emotions emoji
   return (
     <View style={styles.emotionsView}>
       <Text style={styles.textEmotions}>How are you feeling today?</Text>
-      <FlatList
-        data={allEmotions}
-        horizontal={true}
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.name}
-        renderItem={({ item }) => (
-          <TouchableWithoutFeedback onPress={() => emotionPressed(item)}>
-            <View style={styles.emojiContainer}>
-              <Text style={styles.emoji}>{item.emoji}</Text>
-              <Text style={styles.emojiText}>{item.name}</Text>
-            </View>
-          </TouchableWithoutFeedback>
-        )}
-      />
-
-      <Text style={styles.swipeText}>Swipe to see more</Text>
+      <View style={{ flexDirection: "row" }}>
+        {allEmotions.map((emotion) => (
+          <TouchableOpacity
+            style={{ margin: 15 }} key={emotion.name} onPress={() => emotionPressed(emotion)}>
+            <Text style={{ fontSize: 40 }}>{emotion.emoji}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <Modal transparent={true} visible={visibleModal} animationType='slide'>
         <View style={styles.modalContainer}>
           <View style={styles.modalInside}>
             <Text style={styles.modalTitle}>{
-              selectedEmotion ? `Why are you feeling ${selectedEmotion.name}?` : "Select an emotion"}</Text>
+              selectedEmotion ? `Why are you feeling ${selectedEmotion.emoji}?` : "Select an emotion"}</Text>
             <TextInput
               style={styles.noteInput}
               placeholder="Add and optional note"
@@ -119,7 +101,7 @@ const styles = StyleSheet.create({
   emotionsView: {
     backgroundColor: "#FFFFFF",
     width: "90%",
-    height: "20%",
+    height: "18%",
     borderRadius: 10,
     alignItems: 'center',
     padding: 10
@@ -127,19 +109,6 @@ const styles = StyleSheet.create({
   textEmotions: {
     fontFamily: "Zain-Regular",
     fontSize: 25
-  },
-  emojiContainer: {
-    alignItems: "center",
-    marginHorizontal: 10,
-    marginTop: 10
-  },
-  emoji: {
-    fontSize: 30
-  },
-  emojiText: {
-    fontFamily: "monospace",
-    fontSize: 10,
-    fontWeight: "500"
   },
   modalContainer: {
     flex: 1,
@@ -186,11 +155,5 @@ const styles = StyleSheet.create({
   btnText: {
     color: "#FFFFFF",
     fontWeight: "500"
-  },
-  swipeText: {
-    fontFamily: "Zain-Regular",
-    fontSize: 16,
-    marginRight: 5,
-    color: "#4B4697"
   },
 })

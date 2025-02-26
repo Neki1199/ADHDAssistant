@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import EmotionsProgress from './EmotionsProgress';
 
 const Progress = () => {
   return (
     <View style={styles.container}>
-      <Text>progress Screen</Text>
+      <EmotionsProgress />
     </View>
   );
 };
@@ -12,8 +13,9 @@ const Progress = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#4B4697",
+    justifyContent: "flex-start",
+    alignItems: "center",
   },
 });
 
