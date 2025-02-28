@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Alert } from 'react-native';
 import { doc, updateDoc, getDoc, setDoc, arrayUnion } from '@firebase/firestore';
 import { db, auth } from "../../firebaseConfig";
-import moment from "moment";
+import dayjs from "dayjs";
 
 export default function EmotionsHome({ navigation }) { // home emotions emoji
   const [selectedEmotion, setSelectedEmotion] = useState(null);
@@ -24,8 +24,8 @@ export default function EmotionsHome({ navigation }) { // home emotions emoji
   const storeEmotion = async (emoji) => {
     const userID = auth.currentUser?.uid;
     if (!userID) return;
-    const today = moment().format("DD-MM-YYYY");
-    const time = moment().format("hh:mm:ss A"); // 00:00 AM
+    const today = dayjs().format("YYYY-MM-DD");
+    const time = dayjs().format("HH:mm:ss");
 
     // set note to was is written: it is an optional note
     const emotionData = { emoji: emoji.emoji, name: emoji.name, note, time };
