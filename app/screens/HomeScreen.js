@@ -1,24 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View, Image, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
-import EmotionsHome from './EmotionsScreen';
+import EmotionsHome from "../screens/Emotions/EmotionsScreen";
+import TasksHome from "../screens/Tasks/TasksScreen"
 
 export default function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <EmotionsHome/>
-      <View style={styles.tasksView}>
-
-      </View>
-      <View style={styles.mealsView}>
-
-      </View>
-      <View style={styles.focusView}>
-
-      </View>
-      <View style={styles.progressView}>
-
-      </View>            
+      <EmotionsHome />
+      <TasksHome />
     </SafeAreaView>
 
   );
@@ -30,18 +20,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'center',
     backgroundColor: '#4B4697',
-    paddingTop: 10
-  },
-  tasksView: {
-
-  },
-  mealsView: {
-
-  },
-  focusView: {
-
-  },
-  progressView: {
-
-  },
+    paddingTop: 10,
+    gap: 30
+  }
 });

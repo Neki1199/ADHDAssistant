@@ -5,7 +5,6 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from "@react-navigation/stack";
 import SignInScreen from '../screens/SignInScreen';
 import SignUpScreen from '../screens/SignUpScreen';
-import Tasks from '../screens/TasksScreen';
 import Meals from '../screens/MealsScreen';
 import Focus from '../screens/FocusScreen';
 import Progress from '../screens/ProgressScreen';
@@ -31,7 +30,7 @@ export default function App() {
 
     if (!loaded && !error) {
         return null;
-    }
+    };
 
     return (
         <>
@@ -41,7 +40,6 @@ export default function App() {
                     <Stack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: false }} />
                     <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: "Sign Up" }} />
                     <Stack.Screen name="Home" component={TopDrawer} options={{ headerShown: false }} />
-                    <Stack.Screen name="Tasks" component={Tasks} />
                     <Stack.Screen name="Meals" component={Meals} />
                     <Stack.Screen name="Focus" component={Focus} />
                     <Stack.Screen name="Progress" component={Progress} />

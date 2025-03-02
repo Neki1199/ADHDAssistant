@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, Alert, StyleSheet, Modal, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { View, Text, Alert, StyleSheet } from 'react-native';
 import { collection, onSnapshot, query, where } from '@firebase/firestore';
-import { db, auth } from "../../firebaseConfig";
+import { db, auth } from "../../../firebaseConfig"
 import { Calendar } from "react-native-calendars";
-import EmotionsTabs from "./EmotionsTabs";
+import EmotionsTabs from "../Emotions/EmotionsTabs";
 import dayjs from "dayjs";
 
 const mostUsedEmoji = (emotions) => {
@@ -17,25 +17,9 @@ const mostUsedEmoji = (emotions) => {
     // get mostUsed, if there is a tie, return also the [0]
 };
 
-// add the data for the month the user is viewing
-const getEmotionsMonth = (month, year, setAllEmotions, cachedData) => {
+const getEmotionsDB = async (startDate, endDate, setAllEmotions, cacheTime, cachedData) => {
     const userID = auth.currentUser?.uid;
-    if (!userID) return;
-
-    // get the whole month, start date till last day of month
-    const startDate = dayjs(`${year}-${month}-01`).format("YYYY-MM-DD");
-    const endDate = dayjs(startDate).endOf("month").format("YYYY-MM-DD");
-
-    // to retrieve the emotions from cachedData from previous months to not retrieve again
-    const cacheTime = `${year}-${month}`;
-    const currentDate = dayjs().format("YYYY-MM");
-    if (cacheTime !== currentDate &&
-        // only previous months
-        dayjs(cacheTime).isBefore(currentDate, "month") &&
-        cachedData.current[cacheTime]) {
-        setAllEmotions(cachedData.current[cacheTime]);
-        return;
-    }
+    if (!userID) return () => { };
 
     const emotionsRef = collection(db, "users", userID, "emotionsTrack");
     const resultQuery = query(emotionsRef, where("__name__", ">=", startDate), where("__name__", "<=", endDate));
@@ -63,9 +47,9 @@ const getEmotionsMonth = (month, year, setAllEmotions, cachedData) => {
                         emotionsDay: emotions,
                     };
                 }
-            })
+            });
             setAllEmotions(allData);
-            if (dayjs(cacheTime).isBefore(currentDate, "month")) {
+            if (dayjs(cacheTime).isBefore(dayjs().format("YYYY-MM"), "month")) {
                 cachedData.current[cacheTime] = allData; // set cached for first time if does not exist (only previous months)
             }
         } catch (error) {
@@ -77,7 +61,37 @@ const getEmotionsMonth = (month, year, setAllEmotions, cachedData) => {
         }
     });
     return unsuscribe;
-}
+};
+
+// set cached data if exists
+const getCachedEmotions = (cacheTime, cachedData, setAllEmotions) => {
+    if (cachedData.current[cacheTime]) {
+        setAllEmotions(cachedData.current[cacheTime]);
+        return true;
+    }
+    return false;
+};
+
+// retrieve the data for the month the user is viewing
+const getEmotionsMonth = (month, year, setAllEmotions, cachedData) => {
+    // get the whole month, start date till last day of month
+    const startDate = dayjs(`${year}-${month}-01`).format("YYYY-MM-DD");
+    const endDate = dayjs(startDate).endOf("month").format("YYYY-MM-DD");
+    // to retrieve the emotions from cachedData from previous months to not retrieve again
+    const cacheTime = `${year}-${month}`;
+    const currentDate = dayjs().format("YYYY-MM");
+
+    // set cache data if exists and finish function
+    if (cacheTime !== currentDate &&
+        // only previous months
+        dayjs(cacheTime).isBefore(currentDate, "month")) {
+        if (getCachedEmotions(cacheTime, cachedData, setAllEmotions)) return () => { };
+    }
+
+    // return all emotions from current month
+    return getEmotionsDB(startDate, endDate, setAllEmotions, cacheTime, cachedData);
+};
+
 
 const EmotionsProgress = () => {
     const [allEmotions, setAllEmotions] = useState({});
@@ -86,35 +100,27 @@ const EmotionsProgress = () => {
     const [unsuscribe, setUnsuscribe] = useState(null);
     const cachedData = useRef({}); // useRef to not reset data on re-renders
 
-    // useCallback caches a function on first re-render to not change unless dependencies change
-    const monthChange = useCallback((monthData) => {
-        const newMonth = dayjs(monthData.dateString).format("YYYY-MM");
-        setCurrentMonth(newMonth);
-    }, []);
-
-    const dayChange = useCallback((day) => {
-        setSelectedDate(day.dateString);
-
-    }, []);
-
-    // listen for any changes
+    // listen for any changes in actual month
     useEffect(() => {
         // stop listening to updates of the previous month when changed (cleanup)
-        if (unsuscribe) unsuscribe();
+        if (unsuscribe === typeof ("function")) { unsuscribe() };
         const [year, month] = currentMonth.split("-");
         const newUnsuscribe = getEmotionsMonth(month, year, setAllEmotions, cachedData);
 
         setUnsuscribe(() => newUnsuscribe);  // set the new listening
         // clean up when unmont
-        return () => { if (newUnsuscribe) newUnsuscribe(); };
+        return () => { if (newUnsuscribe === typeof ("function")) { newUnsuscribe(); } };
     }, [currentMonth]);
+
 
     const markedDates = useMemo(() => {
         const dates = {};
         Object.keys(allEmotions).forEach(date => {
-            dates[date] = {
-                customStyles: allEmotions[date].customStyles,
-            };
+            if (allEmotions[date] && allEmotions[date].customStyles) {
+                dates[date] = {
+                    customStyles: allEmotions[date].customStyles,
+                };
+            }
         });
         return dates;
     }, [allEmotions]); // only re-run when allEmotions change
@@ -125,11 +131,15 @@ const EmotionsProgress = () => {
                 <View style={styles.containerCalendar}>
                     <Calendar
                         firstDay={1}
-                        day
                         markingType={"custom"}
                         markedDates={markedDates}
-                        onMonthChange={monthChange}
-                        onDayPress={dayChange}
+                        onMonthChange={(monthData) => {
+                            const newMonth = dayjs(monthData.dateString).format("YYYY-MM");
+                            setCurrentMonth(newMonth);
+                        }}
+                        onDayPress={(day) => {
+                            setSelectedDate(day.dateString);
+                        }}
                         style={{
                             width: "100%",
                             height: "100%",

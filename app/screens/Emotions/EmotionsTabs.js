@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
 import SegmentedControlTab from "react-native-segmented-control-tab";
 import dayjs from 'dayjs';
 import customParseFormat from "dayjs/plugin/customParseFormat";
@@ -40,9 +40,11 @@ const chartConfig = {
 };
 
 // memo prevents unnecessary re-renders (only re-renders when data change)
-const EmotionsTabs = React.memo(({ allEmotions, selectedDate, currentMonth }) => {
+const EmotionsTabs = ({ allEmotions, selectedDate, currentMonth }) => {
     const [selectedIndex, setSelectedIndex] = useState(0); // start at days
-
+    const [filteredDayData, setFilteredDayData] = useState([]);
+    const [filteredWeekData, setFilteredWeekData] = useState({});
+    const [allEmotionsPrev, setAllEmotionsPrev] = useState({});
     // get range of week for week view
     const getWeek = (date) => {
         const startWeek = dayjs(date).startOf("isoWeek").format("YYYY-MM-DD");
@@ -50,23 +52,41 @@ const EmotionsTabs = React.memo(({ allEmotions, selectedDate, currentMonth }) =>
         return { startWeek, endWeek };
     }
 
-    // useMemo to only change data when dependencies change. Filter data for days
-    const filteredDayData = useMemo(() => {
-        return allEmotions[selectedDate]?.emotionsDay || [];
-    }, [selectedDate]);
+    // filter day and week data
+    useEffect(() => {
+        // check that the dates are same, to upload
+        if (currentMonth === dayjs(selectedDate).format("YYYY-MM")) {
+            // data for the day
+            const dayData = allEmotions[selectedDate]?.emotionsDay || [];
+            setFilteredDayData(dayData);
 
-    // filter data for week
-    const filteredWeekData = useMemo(() => {
-        const { startWeek, endWeek } = getWeek(selectedDate);
-        // use the dates (keys) to filter the emotions between the week
-        const weekData = {};
-        for (const date in allEmotions) {
-            if (date >= startWeek && date <= endWeek) {
-                weekData[date] = allEmotions[date];
+            // data for the week
+            const { startWeek, endWeek } = getWeek(selectedDate);
+            const weekData = {};
+            for (const date in allEmotions) {
+                if (date >= startWeek && date <= endWeek) {
+                    weekData[date] = allEmotions[date];
+                }
             }
+            setFilteredWeekData(weekData);
+            setAllEmotionsPrev(allEmotions);
+            // if changed month, then it will store the previous data, to not change when month changes
+        } else {
+            const dayData = allEmotionsPrev[selectedDate]?.emotionsDay || [];
+            setFilteredDayData(dayData);
+
+            const { startWeek, endWeek } = getWeek(selectedDate);
+            const weekData = {};
+            for (const date in allEmotionsPrev) {
+                if (date >= startWeek && date <= endWeek) {
+                    weekData[date] = allEmotionsPrev[date];
+                }
+            }
+            setFilteredWeekData(weekData);
         }
-        return weekData;
-    }, [selectedDate]);
+
+    }, [selectedDate, allEmotions]);
+
 
     // filter data for month
     const filteredMonthData = useMemo(() => {
@@ -74,6 +94,7 @@ const EmotionsTabs = React.memo(({ allEmotions, selectedDate, currentMonth }) =>
     }, [allEmotions]);
 
     const month = dayjs(currentMonth).format("MMMM");
+
     return (
         <View style={styles.container}>
             <SegmentedControlTab
@@ -93,7 +114,7 @@ const EmotionsTabs = React.memo(({ allEmotions, selectedDate, currentMonth }) =>
             {selectedIndex === 2 && <MonthView allEmotionsCount={filteredMonthData} />}
         </View>
     );
-});
+};
 
 const EmotionItem = React.memo(({ item, isLast }) => {
     return (
@@ -107,7 +128,7 @@ const EmotionItem = React.memo(({ item, isLast }) => {
     );
 });
 
-const DayView = ({ allEmotions, selectedDate }) => {
+const DayView = ({ allEmotions }) => {
     // to improve performance, do not change data on re-renders unless dep. changed
     const renderEmotionItem = useCallback(({ item, index }) => (
         <EmotionItem
@@ -172,7 +193,6 @@ const WeekView = ({ allEmotions }) => {
 
 const MonthView = ({ allEmotionsCount }) => {
     const totalSum = Object.values(allEmotionsCount).reduce((sum, count) => sum + count, 0);
-
 
     return (
         <View style={styles.dataContainer}>

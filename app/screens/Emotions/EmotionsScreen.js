@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Alert } from 'react-native';
 import { doc, updateDoc, getDoc, setDoc, arrayUnion } from '@firebase/firestore';
-import { db, auth } from "../../firebaseConfig";
+import { db, auth } from "../../../firebaseConfig";
 import dayjs from "dayjs";
 
 export default function EmotionsHome({ navigation }) { // home emotions emoji
@@ -93,11 +93,6 @@ export default function EmotionsHome({ navigation }) { // home emotions emoji
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   emotionsView: {
     backgroundColor: "#FFFFFF",
     width: "90%",
