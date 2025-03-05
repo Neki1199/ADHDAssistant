@@ -2,10 +2,12 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from "expo-constants";
 
 // Initialize Firebase
 const firebaseConfig = {
-  apiKey: 'AIzaSyA9EBWwX1HDOm3UC6E7SqaIN-0s0zOWocg',
+  //apiKey: 'AIzaSyA9EBWwX1HDOm3UC6E7SqaIN-0s0zOWocg',
+  apiKey: Constants.expoConfig.extra.FIREBASE_API_KEY,
   authDomain: 'adhd-assistant-43bcf.firebaseapp.com',
   //databaseURL: 'https://adhd-assistant-43bcf.firebaseio.com',
   projectId: 'adhd-assistant-43bcf',

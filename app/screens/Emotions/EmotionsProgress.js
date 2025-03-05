@@ -44,7 +44,7 @@ const getEmotionsDB = async (startDate, endDate, setAllEmotions, cacheTime, cach
                                 alignItems: "center",
                             },
                             text: {
-                                color: date === dayjs().format("YYYY-MM-DD") ? "#CCE5FF" : "#000000",
+                                color: date === dayjs().format("YYYY-MM-DD") ? "#330066" : "#000000",
                                 fontWeight: date === dayjs().format("YYYY-MM-DD") ? "bold" : "normal"
                             }
                         },
@@ -159,7 +159,7 @@ const EmotionsProgress = () => {
                             textDayFontFamily: "monospace",
                             textMonthFontFamily: "Zain-Regular",
                             textDayHeaderFontFamily: "Zain-Regular",
-                            textDayFontSize: 12,
+                            textDayFontSize: 14,
                             textMonthFontSize: 20,
                             textDayHeaderFontSize: 14
                         }}

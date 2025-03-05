@@ -1,6 +1,8 @@
 {
   "expo": {
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "name": "adhd-app",
     "slug": "adhd-app",
     "version": "1.0.0",
@@ -39,6 +41,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "5a272480-5402-4f4b-a68e-35ab4f3a8b22"
+      }
     }
   }
 }

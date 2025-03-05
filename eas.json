@@ -1,0 +1,55 @@
+{
+  "cli": {
+    "version": ">= 15.0.13",
+    "appVersionSource": "remote",
+    "requireCommit": "true"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "FIREBASE_API_KEY": "@env:FIREBASE_API_KEY"
+      }
+    },
+    "preview": {
+      "android": {
+        "buildType": "apk",
+        "distribution": "internal"
+      },
+      "env": {
+        "FIREBASE_API_KEY": "@env:FIREBASE_API_KEY"
+      }
+    },
+    "preview2": {
+      "android": {
+        "gradleCommand": ":app:assembleRelease",
+        "buildType": "apk"
+      },
+      "env": {
+        "FIREBASE_API_KEY": "@env:FIREBASE_API_KEY"
+      }
+    },
+    "production": {
+      "android": {
+        "autoIncrement": true,
+        "buildType": "apk"
+      },
+      "env": {
+        "FIREBASE_API_KEY": "@env:FIREBASE_API_KEY"
+      }
+    },
+    "release": {
+      "android": {
+        "gradleCommand": ":app:assembleRelease",
+        "buildType": "apk"
+      },
+      "env": {
+        "FIREBASE_API_KEY": "@env:FIREBASE_API_KEY"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
