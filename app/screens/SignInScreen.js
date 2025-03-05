@@ -4,163 +4,162 @@ import { auth } from '../../firebaseConfig';
 import { onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { TextInput } from 'react-native-gesture-handler';
 
-
 export default function SignInScreen({ navigation }) {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
-    const [resetEmail, setResetEmail] = useState("");
-    const [checkAuth, setCheckAuth] = useState(true); //track if user is auth
-    const [logginIn, setLogginIn] = useState(false); // loading in login button
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [checkAuth, setCheckAuth] = useState(true); //track if user is auth
+  const [logginIn, setLogginIn] = useState(false); // loading in login button
 
-    useEffect (() => {
-        const stayConnected = onAuthStateChanged(auth, (currentUser) => {
-          if(currentUser){
-            if(currentUser.emailVerified){
-              navigation.replace("Home");
-            } else {
-              navigation.navigate("SignIn");
-              setCheckAuth(false); // do not show spinner, go to login
-            }
-          } else {
-            setCheckAuth(false);
-            navigation.navigate("SignIn");
-          }
-        });
-        return () => stayConnected();
-    }, [navigation]);
-
-    // to sign in
-    const signIn = async () => {
-      setLogginIn(true);
-      try{
-        // authenticate user
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        // check if user has verified the email
-        if(!user.emailVerified) {
-          Alert.alert(
-            "⚠️ Ups!",
-            "Please verify your email before logging in",
-            [{ text: "Try Again", style: "default" }]
-          );
-          return;
-        } else { // go home
+  useEffect(() => {
+    const stayConnected = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        if (currentUser.emailVerified) {
           navigation.replace("Home");
-        }
-      } catch (error) {
-        if (!email || !password){
-          Alert.alert(
-            "⚠️ Ups!",
-            "Enter email and password",
-            [{ text: "Try Again", style: "default" }]
-          );
-        } else if(error.code === "auth/invalid-credential"){
-          Alert.alert(
-            "⚠️ Ups!",
-            "Incorrect email or password",
-            [{ text: "Try Again", style: "default" }]
-          );
         } else {
-          console.log(error);
-          Alert.alert(
-            "⚠️ Ups!",
-            "Sign In failed",
-            [{ text: "Try Again", style: "default" }]
-          );
+          navigation.navigate("SignIn");
+          setCheckAuth(false); // do not show spinner, go to login
         }
-      } finally {
-        setLogginIn(false);
+      } else {
+        setCheckAuth(false);
+        navigation.navigate("SignIn");
       }
-    };
-    
-    // the forget password text
-    const forgotPassword = async () => {
-      if(!resetEmail) {
-        Alert.alert(
-          "⚠️ Ups!",
-          "Please enter your email to reset password",
-          [{ text: "Try Again", style: "default" }]
-        );
-      }
+    });
+    return () => stayConnected();
+  }, [navigation]);
 
-      try{
-        await sendPasswordResetEmail(auth, resetEmail);
-        Alert.alert(
-          "✅ Success!",
-          "Password reset email sent",
-          [{ text: "Close", style: "default" }]
-        );
-        setForgotPasswordVisible(false);
-        setResetEmail("");
-      } catch(error){
+  // to sign in
+  const signIn = async () => {
+    setLogginIn(true);
+    try {
+      // authenticate user
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // check if user has verified the email
+      if (!user.emailVerified) {
         Alert.alert(
           "⚠️ Ups!",
-          "Error sending reset email",
+          "Please verify your email before logging in",
+          [{ text: "Try Again", style: "default" }]
+        );
+        return;
+      } else { // go home
+        navigation.replace("Home");
+      }
+    } catch (error) {
+      if (!email || !password) {
+        Alert.alert(
+          "⚠️ Ups!",
+          "Enter email and password",
+          [{ text: "Try Again", style: "default" }]
+        );
+      } else if (error.code === "auth/invalid-credential") {
+        Alert.alert(
+          "⚠️ Ups!",
+          "Incorrect email or password",
+          [{ text: "Try Again", style: "default" }]
+        );
+      } else {
+        console.log(error);
+        Alert.alert(
+          "⚠️ Ups!",
+          "Sign In failed",
           [{ text: "Try Again", style: "default" }]
         );
       }
+    } finally {
+      setLogginIn(false);
     }
+  };
 
-    if(checkAuth){
-      return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#6D67BD"/>
-        </View>
+  // the forget password text
+  const forgotPassword = async () => {
+    if (!resetEmail) {
+      Alert.alert(
+        "⚠️ Ups!",
+        "Please enter your email to reset password",
+        [{ text: "Try Again", style: "default" }]
       );
     }
 
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      Alert.alert(
+        "✅ Success!",
+        "Password reset email sent",
+        [{ text: "Close", style: "default" }]
+      );
+      setForgotPasswordVisible(false);
+      setResetEmail("");
+    } catch (error) {
+      Alert.alert(
+        "⚠️ Ups!",
+        "Error sending reset email",
+        [{ text: "Try Again", style: "default" }]
+      );
+    }
+  }
+
+  if (checkAuth) {
     return (
-        <SafeAreaView style={styles.container}>
-          <Image 
-            source={require('../../assets/images/logoADHD.png')}
-            style={styles.img}/>
-          <Text style={styles.title}>Welcome</Text>
-          <TextInput
-              style={styles.input} 
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}/>
-          <TextInput 
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6D67BD" />
+      </View>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <Image
+        source={require('../../assets/images/logoADHD.png')}
+        style={styles.img} />
+      <Text style={styles.title}>Welcome</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail} />
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        value={password}
+        onChangeText={setPassword} secureTextEntry />
+
+      <TouchableOpacity style={[styles.button, styles.btnLogin]} onPress={signIn} disabled={logginIn}>
+        {logginIn ? <ActivityIndicator size="small" color="#6D67BD" /> : <Text style={styles.btnTextLogIn}>Log In</Text>}
+      </TouchableOpacity>
+      <TouchableOpacity style={[styles.button, styles.btnCreate]} onPress={() => navigation.navigate("SignUp")}>
+        <Text style={styles.btnText}>Create Account</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.forgot} onPress={() => setForgotPasswordVisible(true)}>
+        <Text style={styles.textPassword} >Forgot Password?</Text>
+      </TouchableOpacity>
+
+      <Modal transparent={true} visible={forgotPasswordVisible} animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalInside}>
+            <Text style={styles.modalTitle}>Reset Password</Text>
+            <TextInput
               style={styles.input}
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword} secureTextEntry/>
+              placeholder="Enter your email"
+              value={resetEmail}
+              onChangeText={setResetEmail}
+            />
 
-          <TouchableOpacity style={[styles.button, styles.btnLogin]} onPress={signIn} disabled={logginIn}>
-            {logginIn ? <ActivityIndicator size="small" color="#6D67BD"/> : <Text style={styles.btnTextLogIn}>Log In</Text>}
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, styles.btnCreate]} onPress={()=> navigation.navigate("SignUp")}>
-            <Text style={styles.btnText}>Create Account</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.forgot} onPress={()=> setForgotPasswordVisible(true)}>
-            <Text style={styles.textPassword} >Forgot Password?</Text>
-          </TouchableOpacity>
-
-          <Modal transparent={true} visible={forgotPasswordVisible} animationType="slide">
-            <View style={styles.modalContainer}>
-              <View style={styles.modalInside}>
-                <Text style={styles.modalTitle}>Reset Password</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your email"
-                  value={resetEmail}
-                  onChangeText={setResetEmail}
-                />
-
-                <TouchableOpacity style={[styles.button, styles.btnCreate]} onPress={forgotPassword}>
-                  <Text style={styles.btnText}>Send Reset Link</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={()=> setForgotPasswordVisible(false)}>
-                  <Text style={styles.closeModal}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-        </SafeAreaView>
-    )
+            <TouchableOpacity style={[styles.button, styles.btnCreate]} onPress={forgotPassword}>
+              <Text style={styles.btnText}>Send Reset Link</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setForgotPasswordVisible(false)}>
+              <Text style={styles.closeModal}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
+  )
 }
 
 const styles = StyleSheet.create({
@@ -234,7 +233,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600'
   },
-  modalContainer:{
+  modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',

@@ -37,12 +37,16 @@ const getEmotionsDB = async (startDate, endDate, setAllEmotions, cacheTime, cach
                     allData[date] = {
                         customStyles: {
                             container: {
-                                backgroundColor: emojiMostUsed === "🟢" ? "#6ED25A" :
-                                    emojiMostUsed === "🟠" ? "#FF9933" :
-                                        emojiMostUsed === "🔴" ? "#DF2D2D" : "#838383",
-                                borderRadius: 5
+                                backgroundColor: emojiMostUsed === "🟢" ? "#B4F0A8" :
+                                    emojiMostUsed === "🟠" ? "#FFC68B" :
+                                        emojiMostUsed === "🔴" ? "#FA9999" : "#838383",
+                                justifyContent: "center",
+                                alignItems: "center",
                             },
-                            text: { color: "#FFFFFF", fontWeight: "bold" }
+                            text: {
+                                color: date === dayjs().format("YYYY-MM-DD") ? "#CCE5FF" : "#000000",
+                                fontWeight: date === dayjs().format("YYYY-MM-DD") ? "bold" : "normal"
+                            }
                         },
                         emotionsDay: emotions,
                     };
@@ -109,7 +113,7 @@ const EmotionsProgress = () => {
 
         setUnsuscribe(() => newUnsuscribe);  // set the new listening
         // clean up when unmont
-        return () => { if (newUnsuscribe === typeof ("function")) { newUnsuscribe(); } };
+        return () => { if (newUnsuscribe && typeof newUnsuscribe === "function") { newUnsuscribe(); } }
     }, [currentMonth]);
 
 
@@ -143,17 +147,19 @@ const EmotionsProgress = () => {
                         style={{
                             width: "100%",
                             height: "100%",
-                            borderRadius: 20
+                            borderRadius: 15
                         }}
                         theme={{
-                            todayBackgroundColor: "#EAE8FF",
+                            todayBackgroundColor: "#4B4697",
+                            todayTextColor: "#FFFFFF",
                             textSectionTitleColor: "#B6C1CD",
                             arrowColor: "#4B4697",
+                            selectedDayBackgroundColor: "#EBEAF6",
                             monthTextColor: "#4B4697",
-                            textDayFontFamily: "Zain-Regular",
+                            textDayFontFamily: "monospace",
                             textMonthFontFamily: "Zain-Regular",
                             textDayHeaderFontFamily: "Zain-Regular",
-                            textDayFontSize: 16,
+                            textDayFontSize: 12,
                             textMonthFontSize: 20,
                             textDayHeaderFontSize: 14
                         }}
@@ -179,7 +185,7 @@ const styles = StyleSheet.create({
         color: "#4B4697",
     },
     containerEmotions: {
-        backgroundColor: "#F5F5F5",
+        backgroundColor: "transparent",
         justifyContent: "flex-start",
         alignItems: "center",
         width: "90%",
@@ -207,9 +213,7 @@ const styles = StyleSheet.create({
         fontFamily: "monospace",
         fontSize: 12,
         color: "#000000",
-
-    },
-
+    }
 });
 
 export default EmotionsProgress;

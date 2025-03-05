@@ -52,37 +52,31 @@ const EmotionsTabs = ({ allEmotions, selectedDate, currentMonth }) => {
         return { startWeek, endWeek };
     }
 
+    const setData = (emotionsData) => {
+        // data for the day
+        const dayData = emotionsData[selectedDate]?.emotionsDay || [];
+        setFilteredDayData(dayData);
+
+        // data for the week
+        const { startWeek, endWeek } = getWeek(selectedDate);
+        const weekData = {};
+        for (const date in emotionsData) {
+            if (date >= startWeek && date <= endWeek) {
+                weekData[date] = emotionsData[date];
+            }
+        }
+        setFilteredWeekData(weekData);
+    }
+
     // filter day and week data
     useEffect(() => {
         // check that the dates are same, to upload
         if (currentMonth === dayjs(selectedDate).format("YYYY-MM")) {
-            // data for the day
-            const dayData = allEmotions[selectedDate]?.emotionsDay || [];
-            setFilteredDayData(dayData);
-
-            // data for the week
-            const { startWeek, endWeek } = getWeek(selectedDate);
-            const weekData = {};
-            for (const date in allEmotions) {
-                if (date >= startWeek && date <= endWeek) {
-                    weekData[date] = allEmotions[date];
-                }
-            }
-            setFilteredWeekData(weekData);
+            setData(allEmotions);
             setAllEmotionsPrev(allEmotions);
             // if changed month, then it will store the previous data, to not change when month changes
         } else {
-            const dayData = allEmotionsPrev[selectedDate]?.emotionsDay || [];
-            setFilteredDayData(dayData);
-
-            const { startWeek, endWeek } = getWeek(selectedDate);
-            const weekData = {};
-            for (const date in allEmotionsPrev) {
-                if (date >= startWeek && date <= endWeek) {
-                    weekData[date] = allEmotionsPrev[date];
-                }
-            }
-            setFilteredWeekData(weekData);
+            setData(allEmotionsPrev);
         }
 
     }, [selectedDate, allEmotions]);
@@ -97,18 +91,24 @@ const EmotionsTabs = ({ allEmotions, selectedDate, currentMonth }) => {
 
     return (
         <View style={styles.container}>
+            <Text style={styles.dateText}>{dayjs(selectedDate).format("dddd DD MMMM YYYY")}</Text>
             <SegmentedControlTab
                 values={["Day", "Week", selectedIndex == 2 ? month : "Month"]}
                 selectedIndex={selectedIndex}
                 onTabPress={setSelectedIndex}
-                tabsContainerStyle={styles.tabsContainer}
+                firstTabStyle={{
+                    borderTopLeftRadius: 15,
+                    borderBottomLeftRadius: 0
+                }}
+                lastTabStyle={{
+                    borderTopRightRadius: 15,
+                    borderBottomRightRadius: 0
+                }}
                 tabStyle={styles.tab}
                 activeTabStyle={styles.activeTab}
                 tabTextStyle={styles.tabText}
                 activeTabTextStyle={styles.activeTabText}
             />
-            <Text style={styles.dateText}>{dayjs(selectedDate).format("dddd DD MMMM YYYY")}</Text>
-
             {selectedIndex === 0 && <DayView allEmotions={filteredDayData} />}
             {selectedIndex === 1 && <WeekView allEmotions={filteredWeekData} />}
             {selectedIndex === 2 && <MonthView allEmotionsCount={filteredMonthData} />}
@@ -224,28 +224,23 @@ const styles = StyleSheet.create({
     },
     dataContainer: {
         backgroundColor: "#FFFFFF",
-        borderRadius: 15,
+        borderBottomLeftRadius: 15,
+        borderBottomRightRadius: 15,
         alignItems: "center",
         justifyContent: "center",
-        width: "90%",
+        width: "100%",
         height: "70%",
         elevation: 1,
         shadowColor: "#000000",
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.88,
         shadowRadius: 2,
-        marginTop: 10
-    },
-    tabsContainer: {
-        width: "90%",
-        marginBottom: 10
     },
     tab: {
-        borderColor: "transparent",
+        borderColor: "transparent"
     },
     activeTab: {
-        backgroundColor: "#4B4697",
-        borderRadius: 5
+        backgroundColor: "#4B4697"
     },
     tabText: {
         color: "#4B4697",
@@ -285,14 +280,14 @@ const styles = StyleSheet.create({
     },
     weekContainer: {
         alignItems: "center",
-        justifyContent: "center",
-
+        justifyContent: "center"
     },
     dateText: {
-        color: "#4B4697",
-        fontSize: 16,
+        color: "#0F0A51",
+        fontSize: 18,
         fontFamily: "Zain-Regular",
         marginHorizontal: 20,
+        marginVertical: 18
     },
 });
 
