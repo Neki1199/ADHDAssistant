@@ -5,7 +5,7 @@ import {
     doc, updateDoc, getDocs, increment,
     collection, query, where, arrayUnion,
     onSnapshot, getDoc, setDoc, arrayRemove, deleteDoc,
-    deleteField
+    deleteField, writeBatch
 } from '@firebase/firestore';
 
 // add a new task to a specific list
@@ -16,7 +16,6 @@ export const addTask = async (name, date, time, reminder, repeat, duration, comp
     try {
         const taskRef = doc(collection(db, "users", userID, "todoLists", list, "Tasks"));
         await setDoc(taskRef, {
-            id: name,
             name, date, time, reminder, repeat, duration, completed, list, isPast
         });
     } catch (error) {
@@ -52,6 +51,7 @@ export const deleteTask = async (task) => {
     try {
         await deleteDoc(taskRef);
     } catch (error) {
+        console.log("Error removing task: ", error)
         Alert.alert(
             "⚠️ Ups!",
             "Error deleting task",
@@ -60,39 +60,40 @@ export const deleteTask = async (task) => {
     }
 };
 
-// to check if the task is past its due date
-export const setIsPast = (task) => {
-    const currentDate = new Date(); //change
-    const taskDate = task.date;
-    console.log("Current date setispast: ", currentDate);
-    console.log("task date: ", taskDate);
-
-    if (taskDate < currentDate) {
-        return { ...task, isPast: true };
-    }
-    return task;
-};
-
-// to move task to the completed or past collection
-export const changeToCompletedList = async (task) => {
+export const deleteAllCompleted = async (listID) => {
     const userID = auth.currentUser?.uid;
     if (!userID) return;
 
-    const completedRef = collection(db, "users", userID, "otherToDo", "allCompletedTasks");
-    const pastRef = collection(db, "users", userID, "otherToDo", "pastTasks");
+    const tasksRef = collection(db, "users", userID, "todoLists", listID, "Tasks");
+    const queryTasks = query(tasksRef, where("completed", "==", true));
 
     try {
-        // set to all completed tasks
-        if (task.isPast && task.completed) {
-            await setDoc(doc(completedRef, task.id), task);
-            await deleteTask(task);
-        } else if (task.isPast && !task.completed) {
-            // set to pastTasks
-            await setDoc(doc(pastRef, task.id), task);
-            await deleteTask(task);
-        }
+        const completedResult = await getDocs(queryTasks);
+        const batch = db.batch(); // to delete many documents
+
+        completedResult.forEach((doc) => {
+            batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+
     } catch (error) {
-        console.log("Error moving to completed or past: ", error);
+        console.log("Error removing all completed tasks: ", error)
+        Alert.alert(
+            "⚠️ Ups!",
+            "Error deleting all completed tasks",
+            [{ text: "Try Again", style: "default" }]
+        );
+    }
+};
+
+// to check if the task is past its due date
+export const setIsPast = (task) => {
+    const currentDate = new Date(); //change
+    const taskDate = new Date(task.date);
+
+    if (taskDate < currentDate) {
+        changeTask(task, { isPast: true });
     }
 };
 
@@ -199,14 +200,51 @@ export const changeList = async (listID, newName) => {
     const userID = auth.currentUser?.uid;
     if (!userID) return;
 
-    const oldListRef = doc(db, "users", userID, "todoLists", listID);
+    const oldListRef = collection(db, "users", userID, "todoLists", listID, "Tasks");
+    const progressRef = doc(db, "users", userID, "otherToDo", "progress");
     const newListRef = doc(db, "users", userID, "todoLists", newName);
 
     try {
-        // delete old and create a new one (not possible to change ID name)
-        const oldListData = await getDoc(oldListRef);
-        await setDoc(newListRef, oldListData.data());
-        await deleteDoc(oldListRef);
+        // get old progress
+        const progressDoc = await getDoc(progressRef);
+        const oldProgress = progressDoc.exists() ? progressDoc.data()[listID] : 0;
+
+        // get all tasks from old
+        const oldListData = await getDocs(oldListRef);
+
+        // use writeBatch to do all in parallel (to not show on the UI a list being added, and then deleted)
+        const batch = writeBatch(db);
+
+        // create new list, check that it does not exist
+        const newListDoc = await getDoc(newListRef);
+        if (!newListDoc.exists()) {
+            batch.set(newListRef, {});
+        } else {
+            Alert.alert(
+                "⚠️ Ups!",
+                "List already exists, enter new name",
+                [{ text: "Try Again", style: "default" }]
+            );
+            return;
+        }
+        // update progress before moving tasks
+        batch.update(progressRef, {
+            [newName]: oldProgress,
+            [listID]: deleteField()
+        });
+
+        // move each task and change its list field
+        oldListData.docs.forEach((taskDoc) => {
+            const taskData = taskDoc.data();
+            const newTaskRef = doc(db, "users", userID, "todoLists", newName, "Tasks", taskDoc.id);
+            batch.set(newTaskRef, { ...taskData, list: newName });
+            batch.delete(doc(db, "users", userID, "todoLists", listID, "Tasks", taskDoc.id))
+        });
+
+        // delete old list
+        batch.delete(doc(db, "users", userID, "todoLists", listID));
+        await batch.commit(); // all changes at once
+
     } catch (error) {
         console.log("Could not change list: ", error);
         Alert.alert(
@@ -222,12 +260,24 @@ export const deleteList = async (listID) => {
     if (!userID) return;
 
     const listRef = doc(db, "users", userID, "todoLists", listID);
+    const tasksRef = collection(db, "users", userID, "todoLists", listID, "Tasks");
     const progressRef = doc(db, "users", userID, "otherToDo", "progress");
 
     try {
-        await deleteDoc(listRef)
+        const tasksResult = await getDocs(tasksRef);
+        const batch = writeBatch(db);
+
+        // delete each task before deleting the list (if not it still shows the list on firestore)
+        tasksResult.docs.forEach((taskDoc) => {
+            const taskRef = doc(db, "users", userID, "todoLists", listID, "Tasks", taskDoc.id);
+            batch.delete(taskRef);
+        })
+
+        batch.delete(listRef);
         // also delete the progress counter
-        await updateDoc(progressRef, { [listID]: deleteField() });
+        batch.update(progressRef, { [listID]: deleteField() });
+
+        await batch.commit();
     } catch (error) {
         console.log("Could not delete list: ", error);
         Alert.alert(

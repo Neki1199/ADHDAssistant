@@ -89,17 +89,17 @@ export default function App() {
                                 headerLeft: () => (
                                     <TouchableOpacity
                                         onPress={() => navigation.goBack()}
-                                        style={{ padding: 20 }}
+                                        style={{ paddingHorizontal: 15 }}
                                     >
-                                        <AntDesign name="leftcircle" size={24} color="#FFFFFF" />
+                                        <AntDesign name="leftcircle" size={26} color="#FFFFFF" />
                                     </TouchableOpacity>
                                 ),
                                 headerRight: () => (
                                     <TouchableOpacity
                                         onPress={() => navigation.navigate("Tasks", { openModal: true })}
-                                        style={{ padding: 20, alignItems: "center" }}
+                                        style={{ paddingHorizontal: 15, alignItems: "center", marginTop: 5 }}
                                     >
-                                        <AntDesign name="plus" size={24} color="#FFFFFF" />
+                                        <AntDesign name="plus" size={26} color="#FFFFFF" />
                                         <Text style={{ fontSize: 10, color: "#FFFFFF", fontFamily: "monospace" }}>Add List</Text>
                                     </TouchableOpacity>
                                 ),

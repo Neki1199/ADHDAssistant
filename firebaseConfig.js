@@ -6,8 +6,8 @@ import Constants from "expo-constants";
 
 // Initialize Firebase
 const firebaseConfig = {
-  //apiKey: 'AIzaSyA9EBWwX1HDOm3UC6E7SqaIN-0s0zOWocg',
-  apiKey: Constants.expoConfig.extra.FIREBASE_API_KEY,
+  apiKey: 'AIzaSyA9EBWwX1HDOm3UC6E7SqaIN-0s0zOWocg',
+  //apiKey: Constants.expoConfig.extra.FIREBASE_API_KEY,
   authDomain: 'adhd-assistant-43bcf.firebaseapp.com',
   //databaseURL: 'https://adhd-assistant-43bcf.firebaseio.com',
   projectId: 'adhd-assistant-43bcf',

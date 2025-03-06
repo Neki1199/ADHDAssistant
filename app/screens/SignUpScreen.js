@@ -1,10 +1,10 @@
 import { Text, SafeAreaView, TouchableOpacity, Alert, StyleSheet, Image } from 'react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { auth, db } from '../../firebaseConfig';
 import { updateProfile, createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { TextInput } from 'react-native-gesture-handler';
 import { setDoc, doc } from 'firebase/firestore';
-
+import { addNewList } from "./Tasks/TasksDB";
 
 export default function SignUpScreen({ navigation }) {
   const [name, setName] = useState("");
@@ -48,6 +48,12 @@ export default function SignUpScreen({ navigation }) {
         [{ text: "Close", style: "default" }]
       );
 
+      await setDoc(doc(db, "users", user.uid, "otherToDo", "progress"), {
+        Total: 0
+      });
+      await addNewList("Daily");
+      await addNewList("Upcoming");
+
       // go to sign in screen after success sign up
       if (userCredential) navigation.navigate("SignIn");
     } catch (error) {
@@ -72,7 +78,7 @@ export default function SignUpScreen({ navigation }) {
         );
       }
     }
-  }
+  };
 
   return (
     <SafeAreaView style={styles.container}>

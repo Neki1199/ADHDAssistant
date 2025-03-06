@@ -9,6 +9,7 @@ import * as Notifications from "expo-notifications";
 
 // when added task, schedule notification
 const scheduleNotification = async (time, message) => {
+    console.log("scheduling at: ", time);
     await Notifications.scheduleNotificationAsync({
         content: {
             title: "⏰ Task Reminder",
@@ -58,11 +59,13 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list }) => {
     const addNewTask = async () => {
         try {
             if (name.trim() !== "") {
-                await addTask(name, date, taskDetails.Time.value, taskDetails.Reminder.value, taskDetails.Repeat.value, taskDetails.Duration.value, completed, otherList, isPast);
+                await addTask(name, date, taskDetails.Time.value, taskDetails.Reminder.value,
+                    taskDetails.Repeat.value, taskDetails.Duration.value, completed, otherList, isPast);
 
                 if (taskDetails.Reminder.value) {
-                    const reminderTime = dayjs(`${date} ${taskDetails.Reminder.value}`, "YYYY-MM-DD HH:mm").toDate();
-                    scheduleNotification(reminderTime, `Hey! Remember your task "${name}", start at ${taskDetails.Reminder.value}`);
+                    //const reminderTime = dayjs(`${date} ${taskDetails.Reminder.value}`, "YYYY-MM-DD HH:mm").toDate();
+                    const reminderTime = new Date(new Date().getTime() + 10000);
+                    scheduleNotification(reminderTime, `Hey! Remember your task "${name}". Starts at ${taskDetails.Reminder.value}`);
                 }
                 setModalVisible(false);
                 clearAll();

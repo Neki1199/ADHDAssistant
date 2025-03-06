@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, FlatList, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, FlatList, TouchableOpacity, Image } from 'react-native';
 import { getTasks, setCompleted, setNotCompleted } from './TasksDB';
 import { LinearGradient } from 'expo-linear-gradient';
 import ModalNewTask from "./ModalNewTask";
@@ -110,19 +110,27 @@ const ListTasks = ({ route, navigation }) => {
                 style={styles.gradient}>
                 <View style={styles.tasksContainer}>
                     {/* incompleted tasks */}
-                    {tasks.some(task => !task.completed) ?
-                        <FlatList
-                            style={styles.flatlist}
-                            data={tasks.filter(task => !task.completed)}
-                            keyExtractor={item => item.id}
-                            renderItem={({ item }) => (
-                                <TaskItem item={item} navigation={navigation} />
-                            )}
-                        />
+                    {tasks.length === 0 ?
+                        // add image, user has not added a task yet
+                        <Image
+                            source={require("../../../assets/images/addTask.png")}
+                            style={styles.img} />
                         :
-                        <Text style={styles.textNoCompleted}>Add Tasks!</Text>
+                        tasks.some(task => !task.completed) ?
+                            <FlatList
+                                style={styles.flatlist}
+                                data={tasks.filter(task => !task.completed)}
+                                keyExtractor={item => item.id}
+                                renderItem={({ item }) => (
+                                    <TaskItem item={item} navigation={navigation} />
+                                )}
+                            />
+                            : tasks.every(task => task.completed) && (
+                                //add image all completed!
+                                <Image
+                                    source={require("../../../assets/images/completed.png")}
+                                    style={styles.img} />)
                     }
-
                     <TouchableOpacity
                         onPress={changeShowComplete}
                         style={{ flexDirection: "row", justifyContent: "center", gap: 10 }}
@@ -258,6 +266,12 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center"
     },
+    img: {
+        margin: 20,
+        alignSelf: "center",
+        width: 250,
+        height: 250
+    }
 });
 
 export default ListTasks;
