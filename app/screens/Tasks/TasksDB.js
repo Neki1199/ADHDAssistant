@@ -1,24 +1,27 @@
-import React, { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { db, auth } from "../../../firebaseConfig";
 import {
     doc, updateDoc, getDocs, increment,
-    collection, query, where, arrayUnion,
-    onSnapshot, getDoc, setDoc, arrayRemove, deleteDoc,
+    collection, query, where,
+    onSnapshot, getDoc, setDoc, deleteDoc,
     deleteField, writeBatch
 } from '@firebase/firestore';
+import dayjs from 'dayjs';
 
 // add a new task to a specific list
-export const addTask = async (name, date, time, reminder, repeat, duration, completed, list, isPast) => {
+export const addTask = async (name, date, time, reminder, repeat, duration, completed, list, isPast, completedDate, parentID = null) => {
     const userID = auth.currentUser?.uid;
     if (!userID) return;
 
     try {
         const taskRef = doc(collection(db, "users", userID, "todoLists", list, "Tasks"));
         await setDoc(taskRef, {
-            name, date, time, reminder, repeat, duration, completed, list, isPast
+            id: taskRef.id, name, date, time, reminder, repeat, duration, completed, list, isPast, completedDate, parentID
         });
+
+        return { id: taskRef.id }; // return the id
     } catch (error) {
+        console.log("Error adding task: ", error);
         Alert.alert(
             "⚠️ Ups!",
             "Error adding new task",
@@ -69,7 +72,7 @@ export const deleteAllCompleted = async (listID) => {
 
     try {
         const completedResult = await getDocs(queryTasks);
-        const batch = db.batch(); // to delete many documents
+        const batch = writeBatch(db); // to delete many documents
 
         completedResult.forEach((doc) => {
             batch.delete(doc.ref);
@@ -101,9 +104,12 @@ export const setCompleted = async (task) => {
     const userID = auth.currentUser?.uid;
     if (!userID) return;
 
+    const currentDate = dayjs().format("YYYY-MM-DD");
     const taskRef = doc(db, "users", userID, "todoLists", task.list, "Tasks", task.id);
+
     try {
-        await updateDoc(taskRef, { completed: true });
+        // add completedDate to check on progress
+        await updateDoc(taskRef, { completed: true, completedDate: currentDate });
         // add +1 to list on progress
         await addCompletedCount(task);
     } catch (error) {
@@ -118,7 +124,7 @@ export const setNotCompleted = async (task) => {
     const taskRef = doc(db, "users", userID, "todoLists", task.list, "Tasks", task.id);
 
     try {
-        await updateDoc(taskRef, { completed: false });
+        await updateDoc(taskRef, { completed: false, completedDate: "" });
         // -1 to the list on progress, and total
         await removeCompletedCount(task);
 
@@ -307,7 +313,7 @@ export const getTasks = (listID, setTasks) => {
     return unsuscribe;
 };
 
-// get all lists, including upcoming
+// get all lists, including upcoming (setAllList to set them)
 export const getAllLists = (setAllLists) => {
     const userID = auth.currentUser?.uid;
     if (!userID) return [];
@@ -335,12 +341,66 @@ export const getProgress = (listID, setProgress) => {
     const userID = auth.currentUser?.uid;
     if (!userID) return () => { };
 
+    const currentDate = dayjs().format("YYYY-MM-DD");
     const tasksRef = collection(db, "users", userID, "todoLists", listID, "Tasks");
+
     return onSnapshot(tasksRef, (snapshot) => {
-        // get total tasks
-        const totalTasks = snapshot.size;
-        // get completed tasks
-        const completedTasks = snapshot.docs.filter(doc => doc.data().completed).length;
-        setProgress(totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0);
+        let totalTasks = 0;
+        let completedTasks = 0; // for other lists
+        let totalTasksDaily = 0; // for total daily tasks
+        let completedTasksDaily = 0; // for daily completed
+
+        snapshot.docs.forEach(doc => {
+            const taskData = doc.data();
+            const taskDate = taskData.date;
+            const taskCompleted = taskData.completed;
+            const completedDate = taskData.completedDate || null;
+
+            totalTasks++; // count all tasks for non daily lists
+
+            // check if task is for today or past
+            const isTodayTask = taskDate === currentDate;
+            const isPastUncompleted = taskDate < currentDate && !taskCompleted;
+            const isPastCompleted = (taskDate < currentDate && taskCompleted) && (completedDate === currentDate);
+
+            // count tasks that are for today (or past uncompleted / completed today)
+            if (isTodayTask || isPastUncompleted || isPastCompleted) {
+                totalTasksDaily++;
+            }
+
+            // check completed for today
+            if (taskCompleted && completedDate === currentDate) {
+                completedTasksDaily++;
+            }
+
+            // count completed tasks for non lists
+            if (taskCompleted) {
+                completedTasks++;
+            }
+        });
+
+        if (listID === "Daily") {
+            // in daily, the upcoming tasks does not count
+            setProgress(totalTasksDaily > 0 ? (completedTasksDaily / totalTasksDaily) * 100 : 0);
+        } else {
+            setProgress(totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0);
+        };
     });
+};
+
+export const deleteRepeatedTasks = async (list, parentID) => {
+    const userID = auth.currentUser?.uid;
+    if (!userID) return;
+
+    const tasksRef = collection(db, "users", userID, "todoLists", list, "Tasks");
+    const tasksQuery = query(tasksRef, where("parentID", "==", parentID));
+
+    try {
+        const resultTasks = await getDocs(tasksQuery);
+        resultTasks.forEach(async (task) => {
+            await deleteDoc(task.ref);
+        });
+    } catch (error) {
+        console.log("Could not delete parentID tasks: ", error)
+    }
 };

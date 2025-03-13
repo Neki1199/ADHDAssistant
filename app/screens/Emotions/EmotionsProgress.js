@@ -136,14 +136,17 @@ const EmotionsProgress = () => {
                     <Calendar
                         firstDay={1}
                         markingType={"custom"}
-                        markedDates={markedDates}
+                        markedDates={{
+                            ...markedDates,
+                            [selectedDate]: { selected: true, disableTouchEvent: true }
+                        }}
                         onMonthChange={(monthData) => {
                             const newMonth = dayjs(monthData.dateString).format("YYYY-MM");
                             setCurrentMonth(newMonth);
                         }}
-                        onDayPress={(day) => {
-                            setSelectedDate(day.dateString);
-                        }}
+                        onDayPress={(day) =>
+                            setSelectedDate(day.dateString)
+                        }
                         style={{
                             width: "100%",
                             height: "100%",
@@ -154,7 +157,7 @@ const EmotionsProgress = () => {
                             todayTextColor: "#FFFFFF",
                             textSectionTitleColor: "#B6C1CD",
                             arrowColor: "#4B4697",
-                            selectedDayBackgroundColor: "#EBEAF6",
+                            selectedDayBackgroundColor: "#847FC7",
                             monthTextColor: "#4B4697",
                             textDayFontFamily: "monospace",
                             textMonthFontFamily: "Zain-Regular",

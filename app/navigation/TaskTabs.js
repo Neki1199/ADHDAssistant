@@ -86,7 +86,7 @@ const ChangeDeleteModal = ({ modalChangeVisible, setModalChangeVisible, setNewLi
                                 setModalChangeVisible(false);
                                 setNewListName(""); // if user has entered something!
                             }}>
-                            <Text style={styles.textModalCancel}>Delete List</Text>
+                            <AntDesign name="delete" size={24} color={"#FFFFFF"} />
                         </TouchableOpacity>)}
                 </View>
             </View>
@@ -282,10 +282,11 @@ const styles = StyleSheet.create({
     },
     btnDelete: {
         margin: 20,
-        width: 120,
+        width: 40,
         height: 40,
         backgroundColor: "#9B1515",
-        borderRadius: 12,
-        justifyContent: "center"
+        borderRadius: 20,
+        justifyContent: "center",
+        alignItems: "center"
     }
 });

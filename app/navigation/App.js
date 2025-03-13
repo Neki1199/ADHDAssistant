@@ -1,6 +1,6 @@
 import "react-native-reanimated";
 import React, { useEffect } from 'react';
-import { StatusBar, TouchableOpacity, Text, Platform } from 'react-native';
+import { StatusBar, TouchableOpacity, Text, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from "@react-navigation/stack";
 import SignInScreen from '../screens/SignInScreen';
@@ -12,12 +12,14 @@ import TopDrawer from './TopDrawer';
 import HomeScreen from "../screens/HomeScreen";
 import TaskTimer from "../screens/Tasks/TaskStartTimer";
 import { ListsTabs } from "./TaskTabs";
+import ListTasks from "../screens/Tasks/TabLists";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import { LinearGradient } from 'expo-linear-gradient';
 import { ListsProvider } from "../contexts/ListsContext";
 import * as Notifications from "expo-notifications";
+import TasksStart from "../screens/Tasks/TasksStart";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -40,7 +42,10 @@ export default function App() {
     });
 
     useEffect(() => {
-        if (loaded || error) {
+        if (loaded) {
+            SplashScreen.hideAsync();
+        } else if (error) {
+            console.log("Font loading error: ", error);
             SplashScreen.hideAsync();
         }
     }, [loaded, error]);
@@ -50,14 +55,17 @@ export default function App() {
         const getPermissions = async () => {
             const { status } = await Notifications.getPermissionsAsync();
             if (status !== "granted") {
-                await Notifications.requestPermissionsAsync();
+                const { status, newStatus } = await Notifications.requestPermissionsAsync();
+                if (newStatus !== "granted") {
+                    Alert.alert("Notifications Disabled");
+                }
             }
         };
         getPermissions();
     }, []);
 
-    if (!loaded && !error) {
-        return null;
+    if (!loaded) {
+        return null;  // until fonts are ready
     };
 
     return (
@@ -88,7 +96,7 @@ export default function App() {
                                 ),
                                 headerLeft: () => (
                                     <TouchableOpacity
-                                        onPress={() => navigation.goBack()}
+                                        onPress={() => navigation.popToTop()}
                                         style={{ paddingHorizontal: 15 }}
                                     >
                                         <AntDesign name="leftcircle" size={26} color="#FFFFFF" />
@@ -109,8 +117,62 @@ export default function App() {
                                     color: "#FFFFFF",
                                 },
                             })}
+
                         />
-                        <Stack.Screen name="TaskTimer" component={TaskTimer} options={{ headerShown: false }} />
+                        <Stack.Screen name="TaskTimer" component={TaskTimer}
+                            options={({ navigation }) =>
+                            ({
+                                title: "Task Timer",
+                                animation: "slide_from_right",
+                                headerTitleAlign: "center",
+                                headerStyle: {
+                                    borderBottomWidth: 0,
+                                    elevation: 0,
+                                    shadowOpacity: 0,
+                                    backgroundColor: "#7D79C0"
+                                },
+                                headerLeft: () => (
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            setTimeout(() => {
+                                                navigation.navigate("Tasks", { listID: "Daily" })
+                                            }, 100);
+                                        }}
+                                        style={{ paddingHorizontal: 15 }}
+                                    >
+                                        <AntDesign name="leftcircle" size={26} color="#FFFFFF" />
+                                    </TouchableOpacity>
+                                ),
+                                headerTitleStyle: {
+                                    fontFamily: "Zain-Regular",
+                                    fontSize: 30,
+                                    color: "#FFFFFF",
+                                },
+                                gestureEnabled: false
+                            })}
+
+                        />
+                        <Stack.Screen name="ListTasks" component={ListTasks} options={{ headerShown: false }} />
+                        <Stack.Screen name="TasksStart" component={TasksStart}
+                            options={({ navigation }) => ({
+                                title: "",
+                                animation: "slide_from_right",
+                                headerTitleAlign: "center",
+                                headerStyle: {
+                                    borderBottomWidth: 0,
+                                    elevation: 0,
+                                    shadowOpacity: 0,
+                                    backgroundColor: "#7D79C0"
+                                },
+                                headerLeft: () => (
+                                    <TouchableOpacity
+                                        onPress={() => navigation.goBack()}
+                                        style={{ paddingHorizontal: 15 }}
+                                    >
+                                        <AntDesign name="leftcircle" size={26} color="#FFFFFF" />
+                                    </TouchableOpacity>
+                                ),
+                            })} />
                         <Stack.Screen name="Meals" component={Meals} />
                         <Stack.Screen name="Focus" component={Focus} />
                         <Stack.Screen name="Progress" component={Progress} />
