@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from "react";
-import { View, Text, Alert, StatusBar, Modal, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, Alert, StatusBar, Modal, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Dimensions } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { addNewList, changeList, deleteList } from "../screens/Tasks/TasksDB";
 import ListTasks from "../screens/Tasks/TabLists";
 import ListUpcoming from "../screens/Tasks/TabUpcoming";
-import { useIsFocused } from "@react-navigation/native";
+import { useIsFocused, useNavigation, useRoute } from "@react-navigation/native";
 import { AntDesign } from "@expo/vector-icons";
 import { ListsContext } from "../contexts/ListsContext";
 
@@ -56,6 +56,12 @@ const ListModal = ({ modalVisible, setModalVisible, listName, setListName }) => 
 }
 
 const ChangeDeleteModal = ({ modalChangeVisible, setModalChangeVisible, setNewListName, renameList, selectedListName, newListName, isRenaming }) => {
+    const onDelete = async () => {
+        deleteList(selectedListName);
+        setModalChangeVisible(false);
+        setNewListName(""); // if user has entered something!
+    };
+
     return (
         <Modal transparent={true} visible={modalChangeVisible} animationType="slide">
             <View style={styles.modalContainer}>
@@ -81,11 +87,7 @@ const ChangeDeleteModal = ({ modalChangeVisible, setModalChangeVisible, setNewLi
                     ) : (
                         <TouchableOpacity
                             style={styles.btnDelete}
-                            onPress={() => {
-                                deleteList(selectedListName);
-                                setModalChangeVisible(false);
-                                setNewListName(""); // if user has entered something!
-                            }}>
+                            onPress={onDelete}>
                             <AntDesign name="delete" size={24} color={"#FFFFFF"} />
                         </TouchableOpacity>)}
                 </View>
@@ -105,6 +107,7 @@ export const ListsTabs = ({ route, navigation }) => {
     const [newListName, setNewListName] = useState("");
     const [modalChangeVisible, setModalChangeVisible] = useState(false);
     const [isRenaming, setIsRenaming] = useState(false); // to not show the process of adding and deleting a list
+    const [currentTab, setCurrentTab] = useState(listID); // track active tab
 
     // params from App.js where the header is set
     useEffect(() => {
@@ -140,14 +143,6 @@ export const ListsTabs = ({ route, navigation }) => {
         }
     };
 
-    if (allLists.length === 0) {
-        return (
-            <View>
-                <Text>No Lists added</Text>
-            </View>
-        );
-    }
-
     return (
         <View style={{ flex: 1 }}>
             <ChangeDeleteModal
@@ -158,6 +153,7 @@ export const ListsTabs = ({ route, navigation }) => {
                 renameList={renameList}
                 newListName={newListName}
                 isRenaming={isRenaming}
+                currentTab={currentTab}
             />
 
             <ListModal
@@ -167,8 +163,11 @@ export const ListsTabs = ({ route, navigation }) => {
                 setListName={setListName}
             />
             <Tab.Navigator
-                initialRouteName={listID}
+                initialLayout={{ width: Dimensions.get("window").width }}
+                initialRouteName={currentTab}
                 screenOptions={{
+                    swipeEnabled: false,
+                    animationEnabled: false,
                     tabBarActiveTintColor: "#FFFFFF",
                     tabBarInactiveTintColor: "#000000",
                     tabBarIndicatorStyle: {
@@ -188,53 +187,44 @@ export const ListsTabs = ({ route, navigation }) => {
                         width: "auto",
                         paddingHorizontal: 22
                     },
-
-                }}>
+                }}
+                screenListeners={{
+                    tabPress: (e) => {
+                        // get selected tab
+                        const selectedTab = e.target.split("-")[0];
+                        // update currenttab
+                        if (selectedTab) {
+                            setCurrentTab(selectedTab);
+                        }
+                    }
+                }}
+            >
                 {/* Daily first, then others, Upcoming last */}
-                {allLists.some(list => list.id === "Daily") && (
-                    <Tab.Screen
-                        key="Daily"
-                        name="Daily"
-                        component={ListTasks}
-                        initialParams={{ list: "Daily" }}
-                    />
-                )}
-
+                <Tab.Screen
+                    key="Daily"
+                    name="Daily"
+                    component={ListTasks}
+                    initialParams={{ listID: "Daily" }}
+                />
                 {allLists.filter(list => list.id !== "Upcoming" && list.id !== "Daily").map((list) => (
                     <Tab.Screen
                         key={list.id}
                         name={list.id}
                         component={ListTasks}
-                        initialParams={{ list: list.id }}
+                        initialParams={{ listID: list.id }}
                         listeners={{
                             tabLongPress: () => {
-                                if (list.id !== "Daily" && list.id !== "Upcoming") {
-                                    setSelectedListName(list.id);
-                                    setModalChangeVisible(true);
-                                }
+                                setSelectedListName(list.id);
+                                setModalChangeVisible(true);
                             }
                         }}
-                        options={{
-                            tabBarLabel: ({ focused }) => (
-                                <Text style={{
-                                    color: focused ? "#FFFFFF" : "#000000",
-                                    fontFamily: "Zain-Regular",
-                                    fontSize: 20
-                                }}>
-                                    {list.id}
-                                </Text>
-                            )
-                        }}
                     />))}
-
-                {allLists.some(list => list.id === "Upcoming") && (
-                    <Tab.Screen
-                        key="Upcoming"
-                        name="Upcoming"
-                        component={ListUpcoming}
-                        initialParams={{ list: "Upcoming" }}
-                    />
-                )}
+                <Tab.Screen
+                    key="Upcoming"
+                    name="Upcoming"
+                    component={ListUpcoming}
+                    initialParams={{ listID: "Upcoming" }}
+                />
             </Tab.Navigator>
         </View>
     );

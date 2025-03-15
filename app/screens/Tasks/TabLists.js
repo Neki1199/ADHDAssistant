@@ -9,8 +9,25 @@ import dayjs from 'dayjs';
 import TaskItem from './TaskItem';
 import { ModalStart } from './ModalStart';
 
+export const sortTasks = (tasks) => {
+    return tasks.sort((a, b) => {
+        // create date time, if time exists append T to create time object (ISO format)
+        const aDate = dayjs(`${a.date}${a.time ? `T${a.time}` : ""}`);
+        const bDate = dayjs(`${b.date}${b.time ? `T${b.time}` : ""}`);
+
+        // if a and b are the same date
+        if (aDate.isSame(bDate, "day")) {
+            if (!a.time) return 1; // if no time, a after b
+            if (!b.time) return -1; // if no time, b after a
+            return aDate.isBefore(bDate) ? -1 : 1; // if both have time compare complete dates
+        }
+        // if dates not the same compare directly (-1 a before b, 1 a after b)
+        return aDate.isBefore(bDate) ? -1 : 1;
+    })
+};
+
 const ListTasks = ({ route, navigation }) => {
-    const { list } = route.params;
+    const { listID } = route.params;
     const [tasks, setTasks] = useState([]);
     const [showCompleted, setShowCompleted] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
@@ -20,20 +37,20 @@ const ListTasks = ({ route, navigation }) => {
     const [modalStart, setModalStart] = useState(false);
 
     useEffect(() => {
-        const unsuscribe = getTasks(list, (newTasks) => {
+        const unsuscribe = getTasks(listID, (newTasks) => {
             // order tasks by past, current, and upcoming
             const sortedTasks = sortTasks(newTasks);
             setTasks(sortedTasks);
             setLoading(false);
         });
         return () => { if (unsuscribe && typeof unsuscribe === "function") { unsuscribe(); } }
-    }, [list]); // change every time list change
+    }, [listID]); // change every time listID change
 
     // use AsyncStorage to get and store showCompleted state
     useEffect(() => {
         const loadShowCompleted = async () => {
             try {
-                const itemData = await AsyncStorage.getItem(`showCompleted${list}`);
+                const itemData = await AsyncStorage.getItem(`showCompleted${listID}`);
                 if (itemData !== null) {
                     setShowCompleted(JSON.parse(itemData));
                 }
@@ -42,31 +59,14 @@ const ListTasks = ({ route, navigation }) => {
             }
         };
         loadShowCompleted();
-    }, [list]);
-
-    const sortTasks = (tasks) => {
-        return tasks.sort((a, b) => {
-            // create date time, if time exists append T to create time object (ISO format)
-            const aDate = dayjs(`${a.date}${a.time ? `T${a.time}` : ""}`);
-            const bDate = dayjs(`${b.date}${b.time ? `T${a.time}` : ""}`);
-
-            // if a and b are the same date
-            if (aDate.isSame(bDate, "day")) {
-                if (!a.time) return 1; // if no time, a after b
-                if (!b.time) return -1; // if no time, b after a
-                return aDate.isBefore(bDate) ? -1 : 1; // if both have time compare complete dates
-            }
-            // if dates not the same compare directly (-1 a before b, 1 a after b)
-            return aDate.isBefore(bDate) ? -1 : 1;
-        })
-    };
+    }, [listID]);
 
     // to change if the user want to see or not the completed tasks
     const changeShowComplete = async () => {
         try {
             const newShow = !showCompleted;
             setShowCompleted(newShow);
-            await AsyncStorage.setItem(`showCompleted${list}`, JSON.stringify(newShow));
+            await AsyncStorage.setItem(`showCompleted${listID}`, JSON.stringify(newShow));
         } catch (error) {
             console.log("Could not save showCompleted: ", error);
         }
@@ -80,7 +80,7 @@ const ListTasks = ({ route, navigation }) => {
                         <View style={styles.modalInside}>
                             <TouchableOpacity style={styles.btnModal}
                                 onPress={() => {
-                                    deleteAllCompleted(list)
+                                    deleteAllCompleted(listID)
                                     setModalDeleteAll(false)
                                 }}>
                                 <Text style={styles.modalTitle}>Delete all completed tasks</Text>
@@ -100,7 +100,6 @@ const ListTasks = ({ route, navigation }) => {
 
     // get all tasks that are completed (for daily, only past and current tasks)
     const dailyAllTasksCompleted = filteredTasks.pastAndCurrent.every(task => task.completed);
-    const hasUncompletedTasks = filteredTasks.uncompleted.length > 0;
 
     return (
         <View style={styles.container}>
@@ -126,58 +125,58 @@ const ListTasks = ({ route, navigation }) => {
                         {loading ? (
                             <ActivityIndicator size="large" color="#7D79C0" />
                         ) : (
-                            //  incompleted tasks
-                            tasks.length === 0 ? (
-                                // image user has not added a task yet
-                                <Image
-                                    source={require("../../../assets/images/addTask.png")}
-                                    style={styles.img} />
-                            ) : dailyAllTasksCompleted ? (
-                                // image all completed!
-                                <Image
-                                    source={require("../../../assets/images/completed.png")}
-                                    style={styles.img} />
-                            ) : hasUncompletedTasks && ( // there are uncompleted tasks?
-                                <FlatList
-                                    style={styles.flatlist}
-                                    data={list === "Daily" ?
-                                        filteredTasks.uncompleted.filter(task => task.date <= currentDay)
-                                        : filteredTasks.uncompleted
-                                    }
-                                    keyExtractor={item => item.id}
-                                    renderItem={({ item }) => (
-                                        <TaskItem item={item} navigation={navigation} />
-                                    )}
-                                    scrollEnabled={false}
-                                />
-                            )
+                            // there are uncompleted tasks?
+                            <FlatList
+                                style={styles.flatlist}
+                                data={listID === "Daily" ?
+                                    filteredTasks.uncompleted.filter(task => task.date <= currentDay)
+                                    : filteredTasks.uncompleted
+                                }
+                                keyExtractor={item => `${item.id}-${item.date}`}
+                                renderItem={({ item }) => (
+                                    <TaskItem item={item} navigation={navigation} />
+                                )}
+                                scrollEnabled={false}
+                                ListEmptyComponent={
+                                    //  incompleted tasks
+                                    dailyAllTasksCompleted ? (
+                                        // image all completed!
+                                        <Image
+                                            source={require("../../../assets/images/completed.png")}
+                                            style={styles.img} />
+                                    ) : (
+                                        // image user has not added a task yet
+                                        <Image
+                                            source={require("../../../assets/images/addTask.png")}
+                                            style={styles.img} />
+                                    )
+                                }
+                            />
                         )}
 
                         {/* hide or show completed tasks */}
                         <TouchableOpacity onPress={changeShowComplete} style={styles.touchShowComplete}>
-                            <Text style={styles.sectionTitle}>Completed Tasks</Text>
+                            <Text style={styles.sectionTitle}>Completed Tasks<Text style={{ color: "#4B4697" }}>{filteredTasks.completed.length > 0 && `   ${filteredTasks.completed.length}`}</Text></Text>
                             <AntDesign style={{ right: 10 }} name={showCompleted ? "up" : "down"} size={22} color="#404040" />
                         </TouchableOpacity>
 
                         {/* completed tasks */}
                         {showCompleted && (
-                            <>
-                                {filteredTasks.completed.length > 0 ? (
-                                    <FlatList
-                                        style={styles.flatlist}
-                                        data={filteredTasks.completed}
-                                        keyExtractor={item => item.id}
-                                        renderItem={({ item }) => (
-                                            <TaskItem item={item} navigation={navigation} />
-                                        )}
-                                        scrollEnabled={false}
-                                    />
-                                ) : (
+                            <FlatList
+                                style={styles.flatlist}
+                                data={filteredTasks.completed}
+                                keyExtractor={item => `${item.id}-${item.date}`}
+                                renderItem={({ item }) => (
+                                    <TaskItem item={item} navigation={navigation} />
+                                )}
+                                scrollEnabled={false}
+                                ListEmptyComponent={
+                                    // image all completed!
                                     <Image
                                         source={require("../../../assets/images/tasksCompleted.png")}
                                         style={styles.img} />
-                                )}
-                            </>
+                                }
+                            />
                         )}
                     </View>
                 </ScrollView >
@@ -199,14 +198,14 @@ const ListTasks = ({ route, navigation }) => {
                 </TouchableOpacity>
 
                 <ModalNewTask modalVisible={modalVisible} setModalVisible={setModalVisible}
-                    list={list} task={null} />
+                    list={listID} task={null} />
 
-                <ModalStart tasks={list === "Daily" ? filteredTasks.pastAndCurrent.filter(task => !task.completed)
+                <ModalStart tasks={listID === "Daily" ? filteredTasks.pastAndCurrent.filter(task => !task.completed)
                     : filteredTasks.uncompleted} modalStart={modalStart} setModalStart={setModalStart} navigation={navigation} />
 
             </LinearGradient >
             {deleteAllCompletedModal()}
-        </View>
+        </View >
     );
 };
 

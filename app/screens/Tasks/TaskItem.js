@@ -9,7 +9,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime); // to use fromNow()
 
-const TaskItem = ({ item, navigation }) => {
+const TaskItem = ({ item, navigation, colour = null }) => {
     const [checked, setChecked] = useState(item.completed);
     const [modalVisible, setModalVisible] = useState(false);
     const currentDay = dayjs().format("YYYY-MM-DD");
@@ -50,9 +50,14 @@ const TaskItem = ({ item, navigation }) => {
     };
 
     return (
-        <View style={[styles.taskItem, checked && styles.taskCompleted]}>
+        <View style={[styles.taskItem, checked && styles.taskCompleted,
+        { backgroundColor: colour ? `${colour}60` : "#E4E3F6" }
+        ]}>
             <TouchableOpacity onLongPress={() => openChangeDelete()}>
                 <View style={styles.taskItemLeft}>
+                    {colour && (
+                        <Text style={[styles.taskItemTime, { marginBottom: 5 }]}>{item.list}</Text>
+                    )}
                     <Text style={styles.taskItemText}>{item.name}</Text>
                     <Text style={styles.taskItemTime}>
                         <Text style={[
@@ -97,6 +102,10 @@ const TaskItem = ({ item, navigation }) => {
                         iconStyle={styles.checkboxStyle}
                         bounceEffectIn={3}
                         onPress={() => changeChecked()}
+                        innerIconStyle={{
+                            backgroundColor: "rgba(255, 255, 255, 0.4)",
+
+                        }}
                     />
                 </View>
             </View>
@@ -110,7 +119,6 @@ const styles = StyleSheet.create({
     taskItem: {
         flexDirection: "row",
         justifyContent: "space-between",
-        backgroundColor: "#E4E3F6",
         width: "100%",
         padding: 10,
         borderRadius: 20,
@@ -124,7 +132,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         marginRight: 10,
         alignItems: "center",
-        gap: 20
+        gap: 10
     },
     taskItemText: {
         fontFamily: "Zain-Regular",

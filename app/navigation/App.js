@@ -13,6 +13,7 @@ import HomeScreen from "../screens/HomeScreen";
 import TaskTimer from "../screens/Tasks/TaskStartTimer";
 import { ListsTabs } from "./TaskTabs";
 import ListTasks from "../screens/Tasks/TabLists";
+import ListUpcoming from "../screens/Tasks/TabUpcoming";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import AntDesign from "react-native-vector-icons/AntDesign";
@@ -25,7 +26,7 @@ SplashScreen.preventAutoHideAsync();
 
 const Stack = createStackNavigator();
 
-export default function App() {
+export default function App() { // WORKS!
     useEffect(() => {
         const sendTestNotification = async () => {
             await Notifications.scheduleNotificationAsync({
@@ -153,6 +154,7 @@ export default function App() {
 
                         />
                         <Stack.Screen name="ListTasks" component={ListTasks} options={{ headerShown: false }} />
+                        <Stack.Screen name="ListUpcoming" component={ListUpcoming} options={{ headerShown: false }} />
                         <Stack.Screen name="TasksStart" component={TasksStart}
                             options={({ navigation }) => ({
                                 title: "",

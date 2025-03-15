@@ -9,14 +9,14 @@ import {
 import dayjs from 'dayjs';
 
 // add a new task to a specific list
-export const addTask = async (name, date, time, reminder, repeat, duration, completed, list, isPast, completedDate, parentID = null) => {
+export const addTask = async (name, date, time, reminder, repeat, duration, completed, list, completedDate, parentID = null) => {
     const userID = auth.currentUser?.uid;
     if (!userID) return;
 
     try {
         const taskRef = doc(collection(db, "users", userID, "todoLists", list, "Tasks"));
         await setDoc(taskRef, {
-            id: taskRef.id, name, date, time, reminder, repeat, duration, completed, list, isPast, completedDate, parentID
+            id: taskRef.id, name, date, time, reminder, repeat, duration, completed, list, completedDate, parentID
         });
 
         return { id: taskRef.id }; // return the id
@@ -87,16 +87,6 @@ export const deleteAllCompleted = async (listID) => {
             "Error deleting all completed tasks",
             [{ text: "Try Again", style: "default" }]
         );
-    }
-};
-
-// to check if the task is past its due date
-export const setIsPast = (task) => {
-    const currentDate = new Date(); //change
-    const taskDate = new Date(task.date);
-
-    if (taskDate < currentDate) {
-        changeTask(task, { isPast: true });
     }
 };
 
@@ -294,7 +284,7 @@ export const deleteList = async (listID) => {
     }
 };
 
-// get tasks from a list
+// get all tasks from a list
 export const getTasks = (listID, setTasks) => {
     const userID = auth.currentUser?.uid;
     if (!userID) return () => { };
@@ -312,6 +302,34 @@ export const getTasks = (listID, setTasks) => {
     });
     return unsuscribe;
 };
+
+// get all uncompletedtasks of a month from all lists
+export const getUncompletedMonth = (listID, year, month, setTasks) => {
+    const userID = auth.currentUser?.uid;
+    if (!userID) return () => { };
+
+    const startDate = dayjs(`${year}-${month}-01`).startOf("month").format("YYYY-MM-DD");
+    const endDate = dayjs(`${year}-${month}-01`).endOf("month").format("YYYY-MM-DD");
+
+    const tasksRef = collection(db, "users", userID, "todoLists", listID, "Tasks");
+    const tasksQuery = query(tasksRef,
+        where("completed", "==", false),
+        where("date", ">=", startDate),
+        where("date", "<=", endDate),
+    );
+
+    // get all tasks (completed, and not completed)
+    const unsuscribe = onSnapshot(tasksQuery, (tasksSnapshot) => {
+        const tasks = tasksSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        setTasks(tasks);
+    });
+    return unsuscribe;
+};
+
+
 
 // get all lists, including upcoming (setAllList to set them)
 export const getAllLists = (setAllLists) => {

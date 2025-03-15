@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, Text, Alert, StyleSheet } from 'react-native';
+import { View, Alert, StyleSheet } from 'react-native';
 import { collection, onSnapshot, query, where } from '@firebase/firestore';
 import { db, auth } from "../../../firebaseConfig"
 import { Calendar } from "react-native-calendars";
@@ -147,6 +147,7 @@ const EmotionsProgress = () => {
                         onDayPress={(day) =>
                             setSelectedDate(day.dateString)
                         }
+                        hideExtraDays={true}
                         style={{
                             width: "100%",
                             height: "100%",

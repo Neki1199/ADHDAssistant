@@ -209,7 +209,6 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
                                             {dayMonth !== "Last" && (
                                                 <TextInput
                                                     // make if entered 0, put 1. No more than 31 days
-                                                    // handle february
                                                     style={[styles.input, { width: 60, fontSize: 20, bottom: 9 }]}
                                                     placeholder="1"
                                                     keyboardType="numeric"

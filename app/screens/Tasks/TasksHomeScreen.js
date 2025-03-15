@@ -15,7 +15,7 @@ const TasksItemHome = ({ listID, navigation }) => {
 
   return (
     <View style={styles.listItem}>
-      <TouchableOpacity onPress={() => navigation.navigate("Tasks", { listID: listID })}>
+      <TouchableOpacity style={{ alignItems: "center" }} onPress={() => navigation.navigate("Tasks", { listID: listID })}>
         <CircularProgress
           size={50}
           width={4}
@@ -74,6 +74,7 @@ const styles = StyleSheet.create({
     color: "#4B4697"
   },
   listItem: {
+    alignItems: "center",
     justifyContent: "center",
     marginHorizontal: 9
   },

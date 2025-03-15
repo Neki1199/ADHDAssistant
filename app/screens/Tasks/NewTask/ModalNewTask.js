@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
-import { Alert, View, Keyboard, TouchableWithoutFeedback, StyleSheet, Text, TouchableOpacity, Modal, TextInput } from "react-native";
+import { Alert, View, ActivityIndicator, Keyboard, TouchableWithoutFeedback, StyleSheet, Text, TouchableOpacity, Modal, TextInput } from "react-native";
 import { addTask, deleteTask, changeTask, deleteRepeatedTasks } from "../TasksDB"
 import { ListsContext } from "../../../contexts/ListsContext";
 import { AntDesign } from "@expo/vector-icons";
@@ -28,6 +28,7 @@ const scheduleNotification = async (time, message) => {
 const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
     const { allLists } = useContext(ListsContext);
 
+    const [loading, setLoading] = useState(false);
     // calendar, time ui
     const [showPicker, setShowPicker] = useState(false);
     const [mode, setMode] = useState("date");
@@ -49,7 +50,6 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
     const [repeat, setRepeat] = useState(task ? task.repeat : { type: "Once" });
     const [otherList, setOtherList] = useState(task ? task.list : list);
     const completed = (task ? task.completed : false);
-    const isPast = (task ? task.isPast : false);
     const completedDate = (task ? task.completedDate : "");
 
     // also fields, but have the cancel icon to reset
@@ -62,7 +62,6 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
     useEffect(() => {
         setListsItems(getLists());
     }, [allLists]);
-
 
     const clearAll = () => {
         setName("");
@@ -79,10 +78,29 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
     const closeModal = () => {
         setModalVisible(false);
         if (task) {
+            // reset task to what it was if closed
             setName(task.name);
             setDate(task.date);
             setOtherList(task.list);
             setRepeat(task.repeat);
+            setTaskDetails({
+                Time: { value: task?.time || "", cancel: !!task?.time },
+                Reminder: { value: task?.reminder || "", cancel: !!task?.reminder },
+                Duration: { value: task?.duration || "", cancel: !!task?.duration },
+            });
+        } else {
+            // clear all for new task
+            clearAll();
+        }
+    };
+
+    const closeSave = () => {
+        setModalVisible(false);
+        if (task) {
+            setName(name);
+            setDate(date);
+            setOtherList(otherList);
+            setRepeat(repeat);
             setTaskDetails({
                 Time: { value: task?.time || "", cancel: !!task?.time },
                 Reminder: { value: task?.reminder || "", cancel: !!task?.reminder },
@@ -94,8 +112,6 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
     }
 
     const saveTask = async () => {
-        // add repeated tasks if there are
-        // add reminders from repeated if there are
         if (name.trim() === "") {
             Alert.alert(
                 "⚠️ Ups!",
@@ -104,6 +120,8 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
             );
             return;
         }
+
+        setLoading(true); // loading indicator after done add task
 
         try {
             let parentID = task ? task.id : null; // parent id to track repeated tasks
@@ -127,14 +145,16 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                     || prevRepeat.ends !== repeat.ends) {
                     await deleteRepeatedTasks(otherList, parentID); // delete all repeated tasks
 
-                    // get dates from new repeat
-                    let datesRepeat = getDatesRepeat(date);
-                    // add new tasks
-                    datesRepeat.forEach(async (dateRepeat) => {
-                        await addTask(name, dateRepeat, taskDetails.Time.value, taskDetails.Reminder.value,
-                            repeat, taskDetails.Duration.value, completed,
-                            otherList, isPast, completedDate, parentID);
-                    });
+                    if (repeat.type !== "Once") {
+                        // get dates from new repeat
+                        let datesRepeat = getDatesRepeat(date);
+                        // add new tasks
+                        for (const dateRepeat of datesRepeat) {
+                            await addTask(name, dateRepeat, taskDetails.Time.value, taskDetails.Reminder.value,
+                                repeat, taskDetails.Duration.value, completed,
+                                otherList, completedDate, parentID);
+                        }
+                    }
                 }
 
                 await changeTask(task, newData); // update task if already exist
@@ -142,32 +162,31 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
             } else { // its a new task
                 const newTask = await addTask(name, date, taskDetails.Time.value, taskDetails.Reminder.value,
                     repeat, taskDetails.Duration.value, completed,
-                    otherList, isPast, completedDate); // create new
+                    otherList, completedDate); // create new
 
                 parentID = newTask.id;
 
                 // if repeat is set
                 if (repeat.type !== "Once") {
                     let datesRepeat = getDatesRepeat(date);
-
-                    datesRepeat.forEach(async (dateRepeat) => {
+                    for (const dateRepeat of datesRepeat) {
                         await addTask(name, dateRepeat, taskDetails.Time.value, taskDetails.Reminder.value,
                             repeat, taskDetails.Duration.value, completed,
-                            otherList, isPast, completedDate, parentID);
-                    });
+                            otherList, completedDate, parentID);
+                    }
                 }
             }
-
             // TODO: add reminders for each task, repeated as well
             // if reminder changed, update the notification
             if (taskDetails.Reminder.value && (!task || task.reminder !== taskDetails.Reminder.value)) {
                 const reminderTime = dayjs(`${date} ${taskDetails.Reminder.value}`, "YYYY-MM-DD HH:mm").toDate(); // values: date and time
                 scheduleNotification(reminderTime, `Hey! Remember your task "${name}". Starts at ${taskDetails.Reminder.value}`);
             };
-
-            closeModal();
         } catch (error) {
             console.log("Error saving task: ", error)
+        } finally {
+            setLoading(false);
+            closeSave();
         }
     };
 
@@ -175,33 +194,70 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
     const getDatesRepeat = (date) => {
         const datesRepeat = [];
         const startDate = dayjs(date);
-        let currentDate = startDate;
+        let currentDate = dayjs(date);
+        const maxTasks = 30; // limit of tasks for never
+        const days = repeat.days;
 
-        if (repeat.type === "Daily") {
-            // add the interval to the current day
-            const maxTasks = 30; // limit of tasks for never
-            let taskCount = 0;
+        const dayMap = {
+            "Mon": 0,
+            "Tue": 1,
+            "Wed": 2,
+            "Thu": 3,
+            "Fri": 4,
+            "Sat": 5,
+            "Sun": 6
+        };
 
-            while (taskCount < maxTasks || repeat.ends === "Never") {
-                // add interval to date
+        // add intervals
+        while (true) {
+            if (repeat.type === "Daily") {
                 currentDate = currentDate.add(repeat.every, "day");
-                // if there is end date, check end date, and add date
-                if (repeat.ends === "Never" || currentDate <= dayjs(repeat.ends)) {
-                    datesRepeat.push(currentDate.format("YYYY-MM-DD"));
-                    taskCount++;
+                datesRepeat.push(currentDate.format("YYYY-MM-DD"));
+            } else if (repeat.type === "Weekly") {
+                days.forEach(day => {
+                    const dayIndex = dayMap[day]; // get day index
+                    // add one more day (so its exact)
+                    const oneDayMore = currentDate.day(dayIndex).add(1, "day");
+                    const dateDay = oneDayMore.format("YYYY-MM-DD");
+                    // only add if its after the start
+                    if (dayjs(dateDay).isAfter(startDate)) {
+                        datesRepeat.push(dateDay);
+                    }
+                });
+                currentDate = currentDate.add(repeat.every, "week");
+            } else if (repeat.type === "Monthly") {
+                // handle 30-31
+                if (repeat.dayMonth === "Last") {
+                    currentDate = currentDate.endOf("month");
                 } else {
+                    // get smaller day (if 31, get 28, or 30)
+                    const daysInMonth = currentDate.daysInMonth();
+                    const smallerDay = Math.min(repeat.dayMonth, daysInMonth);
+                    currentDate = currentDate.date(smallerDay);
+                }
+                // break beforehand if its after
+                if (repeat.ends !== "Never" && currentDate.isAfter(dayjs(repeat.ends))) {
                     break;
                 }
+                datesRepeat.push(currentDate.format("YYYY-MM-DD"));
+
+                currentDate = currentDate.add(repeat.every, "month");
+            } else if (repeat.type === "Yearly") {
+                currentDate = currentDate.add(repeat.every, "year");
+                // break beforehand if year is after
+                if (repeat.ends !== "Never" && currentDate.isAfter(dayjs(repeat.ends))) {
+                    break;
+                }
+                datesRepeat.push(currentDate.format("YYYY-MM-DD"));
+            }
+
+
+            if (repeat.ends === "Never") {
+                if (datesRepeat.length >= maxTasks) break;
+            } else if (repeat.ends !== "Never" && currentDate > dayjs(repeat.ends)) {
+                break;
             }
         }
-        // } else if(repeat.type === "Weekly"){
-
-        // } else if(repeat.type === "Monthly"){
-
-        // }else if(repeat.type === "Yearly"){
-
-        // }
-        console.log(datesRepeat)
         return datesRepeat;
     };
 
@@ -249,10 +305,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
     };
 
     const setRepetition = (newValue) => {
-        setRepeat((prev) => ({
-            ...prev,
-            ...newValue
-        }));
+        setRepeat(newValue);
     };
 
     // lists for the list details
@@ -302,98 +355,111 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
             <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                 <View style={styles.modalContainer}>
                     <View style={[styles.modalInside, task && { height: "84%" }]}>
-                        <View style={styles.topModal}>
-                            <TouchableOpacity onPress={() => closeModal()}>
-                                <AntDesign name="close" size={30} color={"#4B4697"} />
-                            </TouchableOpacity>
-                            <Text style={styles.modalTitle}>
-                                {task ? "Edit Task" : "New Task"}
-                            </Text>
-                            <TouchableOpacity onPress={() => saveTask()}>
-                                <AntDesign name="checkcircle" size={30} color={"#4B4697"} />
-                            </TouchableOpacity>
-                        </View>
+                        {!loading ? (
+                            <>
+                                <View style={styles.topModal}>
+                                    <TouchableOpacity onPress={() => closeModal()}>
+                                        <AntDesign name="close" size={30} color={"#4B4697"} />
+                                    </TouchableOpacity>
+                                    <Text style={styles.modalTitle}>
+                                        {task ? "Edit Task" : "New Task"}
+                                    </Text>
+                                    <TouchableOpacity onPress={() => saveTask()}>
+                                        <AntDesign name="checkcircle" size={30} color={"#4B4697"} />
+                                    </TouchableOpacity>
+                                </View>
 
-                        {/* task name */}
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Task Name"
-                            value={name}
-                            onChangeText={setName}
-                        />
+                                {/* task name */}
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Task Name"
+                                    value={name}
+                                    onChangeText={setName}
+                                />
 
-                        {/* other task details */}
-                        <TaskDetails {...{ modalInputs, taskDetails, showLists, listsItems, setShowLists, resetTaskDetail, otherList, setOtherList }} />
+                                {/* task details */}
+                                <TaskDetails {...{ modalInputs, taskDetails, showLists, listsItems, setShowLists, resetTaskDetail, otherList, setOtherList }} />
 
-                        {/* delete button if editing */}
-                        {task && (
-                            <TouchableOpacity
-                                style={styles.deleteBtn}
-                                onPress={() => deleteTask(task)}>
-                                <AntDesign name="delete" size={24} color={"#FFFFFF"} />
-                            </TouchableOpacity>
+                                {/* delete button if editing */}
+                                {task && (
+                                    <TouchableOpacity
+                                        style={styles.deleteBtn}
+                                        onPress={() => {
+                                            deleteTask(task);
+                                            if (task.repeat.type !== "Once") {
+                                                deleteRepeatedTasks(list, task.id)
+                                            }
+                                        }}>
+                                        <AntDesign name="delete" size={24} color={"#FFFFFF"} />
+                                    </TouchableOpacity>
+                                )}
+
+                                {/* datetime pciker */}
+                                {showPicker && (
+                                    <DateTimePicker
+                                        value={dayjs(date).toDate()}
+                                        mode={mode}
+                                        display="default"
+                                        onChange={onPickerChange}
+                                        design="default"
+                                    />
+                                )}
+
+                                {/* duration picker */}
+                                {showDurationPicker && (
+                                    <TimerPickerModal
+                                        visible={showDurationPicker}
+                                        setIsVisible={setShowDurationPicker}
+                                        onConfirm={(durationSelected) => {
+                                            // make time 00:00 format
+                                            const hh = durationSelected.hours.toString().padStart(2, "0");
+                                            const mm = durationSelected.minutes.toString().padStart(2, "0");
+
+                                            setDuration(`${hh}:${mm}`);
+                                            setShowDurationPicker(false);
+                                        }}
+                                        modalTitle="Set Duration"
+                                        onCancel={() => setShowDurationPicker(false)}
+                                        closeOnOverlayPress
+                                        hideSeconds
+                                        LinearGradient={LinearGradient}
+                                        hourLimit={{ max: 2, min: 0 }}
+                                        styles={{
+                                            theme: "light",
+                                            pickerItem: {
+                                                fontFamily: "monospace"
+                                            },
+                                            pickerLabel: {
+                                                color: "#4B4697",
+                                            },
+                                            modalTitle: {
+                                                fontFamily: "Zain-Regular",
+                                                fontSize: 26
+                                            },
+                                            cancelButton: {
+                                                color: "#4B4697",
+                                                borderColor: "#4B4697"
+                                            },
+                                            confirmButton: {
+                                                backgroundColor: "#4B4697",
+                                                color: "#FFFFFF",
+                                                borderWidth: 0
+                                            }
+                                        }}
+                                        modalProps={{
+                                            overlayOpacity: 0.2
+                                        }}
+                                    />
+                                )}
+
+                                {/* repeat modal */}
+                                <RepeatSelection {...{ showRepeatModal, setShowRepeatModal, date, setRepetition, repeat }} />
+                            </>
+                        ) : (
+                            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                                <ActivityIndicator size="large" color="#4B4697" />
+                            </View>
                         )}
-
-                        {/* datetime pciker */}
-                        {showPicker && (
-                            <DateTimePicker
-                                value={dayjs(date).toDate()}
-                                mode={mode}
-                                display="default"
-                                onChange={onPickerChange}
-                                design="default"
-                            />
-                        )}
-
-                        {/* duration picker */}
-                        {showDurationPicker && (
-                            <TimerPickerModal
-                                visible={showDurationPicker}
-                                setIsVisible={setShowDurationPicker}
-                                onConfirm={(durationSelected) => {
-                                    // make time 00:00 format
-                                    const hh = durationSelected.hours.toString().padStart(2, "0");
-                                    const mm = durationSelected.minutes.toString().padStart(2, "0");
-
-                                    setDuration(`${hh}:${mm}`);
-                                    setShowDurationPicker(false);
-                                }}
-                                modalTitle="Set Duration"
-                                onCancel={() => setShowDurationPicker(false)}
-                                closeOnOverlayPress
-                                hideSeconds
-                                LinearGradient={LinearGradient}
-                                hourLimit={{ max: 2, min: 0 }}
-                                styles={{
-                                    theme: "light",
-                                    pickerItem: {
-                                        fontFamily: "monospace"
-                                    },
-                                    pickerLabel: {
-                                        color: "#4B4697",
-                                    },
-                                    modalTitle: {
-                                        fontFamily: "Zain-Regular",
-                                        fontSize: 26
-                                    },
-                                    cancelButton: {
-                                        color: "#4B4697",
-                                        borderColor: "#4B4697"
-                                    },
-                                    confirmButton: {
-                                        backgroundColor: "#4B4697",
-                                        color: "#FFFFFF",
-                                        borderWidth: 0
-                                    }
-                                }}
-                                modalProps={{
-                                    overlayOpacity: 0.2
-                                }}
-                            />
-                        )}
-
-                        {/* repeat modal */}
-                        <RepeatSelection {...{ showRepeatModal, setShowRepeatModal, date, setRepetition, repeat }} />
                     </View>
                 </View>
             </TouchableWithoutFeedback>
