@@ -17,9 +17,12 @@
       "buildNumber": "1.0.0",
       "icon": "./assets/images/logoADHD.png",
       "splash": {
-          "image": "./assets/images/logo.png",
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+        "image": "./assets/images/logo.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff"
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
