@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, ActivityIndicator, FlatList, ScrollView, TouchableOpacity, Image, Modal, TouchableWithoutFeedback } from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, StyleSheet, Text, ActivityIndicator, FlatList, ScrollView, SafeAreaView, TouchableOpacity, Image, Modal, TouchableWithoutFeedback } from 'react-native';
 import { getTasks, deleteAllCompleted } from './TasksDB';
 import { LinearGradient } from 'expo-linear-gradient';
 import ModalNewTask from "./NewTask/ModalNewTask";
@@ -8,6 +8,7 @@ import AntDesign from "react-native-vector-icons/AntDesign";
 import dayjs from 'dayjs';
 import TaskItem from './TaskItem';
 import { ModalStart } from './ModalStart';
+import { ThemeContext } from '../../contexts/ThemeContext';
 
 export const sortTasks = (tasks) => {
     return tasks.sort((a, b) => {
@@ -28,8 +29,12 @@ export const sortTasks = (tasks) => {
 
 const ListTasks = ({ route, navigation }) => {
     const { listID } = route.params;
+    const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
+
     const [tasks, setTasks] = useState([]);
     const [showCompleted, setShowCompleted] = useState(false);
+    const [showUpcoming, setShowUpcoming] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [modalDeleteAll, setModalDeleteAll] = useState(false);
     const currentDay = dayjs().format("YYYY-MM-DD");
@@ -72,6 +77,16 @@ const ListTasks = ({ route, navigation }) => {
         }
     };
 
+    const changeShowUpcoming = async () => {
+        try {
+            const newShow = !showUpcoming;
+            setShowUpcoming(newShow);
+            await AsyncStorage.setItem(`showUpcoming${listID}`, JSON.stringify(newShow));
+        } catch (error) {
+            console.log("Could not save showUpcoming: ", error);
+        }
+    };
+
     const deleteAllCompletedModal = () => {
         return (
             <Modal visible={modalDeleteAll} transparent={true} animationType="fade">
@@ -95,16 +110,17 @@ const ListTasks = ({ route, navigation }) => {
     const filteredTasks = {
         pastAndCurrent: tasks.filter(task => task.date <= currentDay),
         uncompleted: tasks.filter(task => !task.completed),
-        completed: tasks.filter(task => task.completed)
+        completed: tasks.filter(task => task.completed),
+        upcoming: tasks.filter(task => !task.completed && task.date > currentDay)
     };
 
     // get all tasks that are completed (for daily, only past and current tasks)
     const dailyAllTasksCompleted = filteredTasks.pastAndCurrent.every(task => task.completed);
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <LinearGradient
-                colors={["#7D79C0", "#EBEAF6"]}
+                colors={[theme.header, theme.linear2]}
                 style={styles.gradient}>
                 <ScrollView
                     contentContainerStyle={styles.scrollViewContent}
@@ -119,19 +135,18 @@ const ListTasks = ({ route, navigation }) => {
                                 disabled={filteredTasks.completed.length === 0}
                             >
                                 <AntDesign style={{ right: 10 }} name="ellipsis1" size={22}
-                                    color={filteredTasks.completed.length > 0 ? "#404040" : "#E0E0E0"} />
+                                    color={
+                                        filteredTasks.completed.length > 0 ? (theme.name === "light" ? "#404040" : "#FFFFFF") : (theme.name === "light" ? "#E0E0E0" : "#606060")
+                                    } />
                             </TouchableOpacity>
                         </View>
                         {loading ? (
                             <ActivityIndicator size="large" color="#7D79C0" />
                         ) : (
-                            // there are uncompleted tasks?
+                            // uncompleted tasks
                             <FlatList
                                 style={styles.flatlist}
-                                data={listID === "Daily" ?
-                                    filteredTasks.uncompleted.filter(task => task.date <= currentDay)
-                                    : filteredTasks.uncompleted
-                                }
+                                data={filteredTasks.uncompleted.filter(task => task.date <= currentDay)}
                                 keyExtractor={item => `${item.id}-${item.date}`}
                                 renderItem={({ item }) => (
                                     <TaskItem item={item} navigation={navigation} />
@@ -154,10 +169,38 @@ const ListTasks = ({ route, navigation }) => {
                             />
                         )}
 
+                        {listID !== "Daily" && (
+                            // hide or show upcoming tasks 
+                            <>
+                                <TouchableOpacity onPress={changeShowUpcoming} style={styles.touchShowComplete}>
+                                    <Text style={styles.sectionTitle}>Upcoming Tasks<Text style={{ color: theme.name === "light" ? "#4B4697" : "#E0E0E0" }}>{filteredTasks.upcoming.length > 0 && `   ${filteredTasks.upcoming.length}`}</Text></Text>
+                                    <AntDesign style={{ right: 10 }} name={showUpcoming ? "up" : "down"} size={22} color={theme.name === "light" ? "#404040" : "#FFFFFF"} />
+                                </TouchableOpacity>
+                                {/* upcoming tasks */}
+                                {showUpcoming && (
+                                    <FlatList
+                                        style={styles.flatlist}
+                                        data={filteredTasks.uncompleted.filter(task => task.date > currentDay)}
+                                        keyExtractor={item => `${item.id}-${item.date}`}
+                                        renderItem={({ item }) => (
+                                            <TaskItem item={item} navigation={navigation} />
+                                        )}
+                                        scrollEnabled={false}
+                                        ListEmptyComponent={
+                                            // image user has not added a task yet
+                                            <Image
+                                                source={require("../../../assets/images/addTask.png")}
+                                                style={styles.img} />
+                                        }
+                                    />
+                                )}
+                            </>
+                        )}
+
                         {/* hide or show completed tasks */}
                         <TouchableOpacity onPress={changeShowComplete} style={styles.touchShowComplete}>
-                            <Text style={styles.sectionTitle}>Completed Tasks<Text style={{ color: "#4B4697" }}>{filteredTasks.completed.length > 0 && `   ${filteredTasks.completed.length}`}</Text></Text>
-                            <AntDesign style={{ right: 10 }} name={showCompleted ? "up" : "down"} size={22} color="#404040" />
+                            <Text style={styles.sectionTitle}>Completed Tasks<Text style={{ color: theme.textTime }}>{filteredTasks.completed.length > 0 && `   ${filteredTasks.completed.length}`}</Text></Text>
+                            <AntDesign style={{ right: 10 }} name={showCompleted ? "up" : "down"} size={22} color={theme.name === "light" ? "#404040" : "#FFFFFF"} />
                         </TouchableOpacity>
 
                         {/* completed tasks */}
@@ -205,11 +248,11 @@ const ListTasks = ({ route, navigation }) => {
 
             </LinearGradient >
             {deleteAllCompletedModal()}
-        </View >
+        </SafeAreaView>
     );
 };
 
-const styles = StyleSheet.create({
+const useStyles = (theme) => StyleSheet.create({
     container: {
         flex: 1
     },
@@ -218,14 +261,16 @@ const styles = StyleSheet.create({
         justifyContent: "flex-start"
     },
     scrollViewContent: {
+        flexGrow: 1,
         alignItems: "center",
         padding: 10,
+        paddingBottom: 0,
         width: "100%",
     },
     tasksContainer: {
         margin: 10,
         padding: 10,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: theme.container,
         borderRadius: 15,
         alignItems: "center",
         justifyContent: "center",
@@ -235,7 +280,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 22,
         fontFamily: "Zain-Regular",
-        color: "#4B6976",
+        color: theme.tabText,
         marginVertical: 10,
         paddingHorizontal: 10,
         width: "100%"
@@ -250,7 +295,7 @@ const styles = StyleSheet.create({
     },
     addTaskButton: {
         borderRadius: 50,
-        backgroundColor: "#4B4697",
+        backgroundColor: theme.primary,
         width: 50,
         height: 50,
         alignSelf: "center",
@@ -262,7 +307,7 @@ const styles = StyleSheet.create({
     },
     pickRandomButton: {
         borderRadius: 50,
-        backgroundColor: "#4B4697",
+        backgroundColor: theme.primary,
         width: 50,
         height: 50,
         alignSelf: "center",
@@ -295,14 +340,14 @@ const styles = StyleSheet.create({
     modalInside: {
         width: "70%",
         padding: 20,
-        backgroundColor: "#EBEAF6",
+        backgroundColor: theme.linear2,
         borderRadius: 15,
         alignItems: "center"
     },
     modalTitle: {
         fontFamily: "Zain-Regular",
         fontSize: 20,
-        color: "#4B4697",
+        color: theme.tabText,
         borderBottomWidth: 1,
         borderColor: "#C0C0C0"
     },

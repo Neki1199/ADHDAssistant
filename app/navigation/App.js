@@ -1,8 +1,8 @@
 import "react-native-reanimated";
 import React, { useEffect } from 'react';
-import { StatusBar, TouchableOpacity, Text, Alert } from 'react-native';
+import { TouchableOpacity, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from "@react-navigation/stack";
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SignInScreen from '../screens/SignInScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import Meals from '../screens/MealsScreen';
@@ -17,25 +17,16 @@ import ListUpcoming from "../screens/Tasks/TabUpcoming";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import AntDesign from "react-native-vector-icons/AntDesign";
-import { LinearGradient } from 'expo-linear-gradient';
 import { ListsProvider } from "../contexts/ListsContext";
 import * as Notifications from "expo-notifications";
 import TasksStart from "../screens/Tasks/TasksStart";
+import { ThemeProvider } from "../contexts/ThemeContext";
 
 SplashScreen.preventAutoHideAsync();
 
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
 
-export default function App() { // WORKS!
-    useEffect(() => {
-        const sendTestNotification = async () => {
-            await Notifications.scheduleNotificationAsync({
-                content: { title: "🔔 Test Notification", body: "This is a test message!", sound: true },
-                trigger: null, // Triggers immediately
-            });
-        };
-        sendTestNotification();
-    }, []);
+export default function App() {
 
     // to use fonts
     const [loaded, error] = useFonts({
@@ -71,116 +62,79 @@ export default function App() { // WORKS!
 
     return (
         <>
-            <StatusBar backgroundColor="#7D79C0" barStyle="light-content" />
-            <ListsProvider>
-                <NavigationContainer>
-                    <Stack.Navigator>
-                        <Stack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: false }} />
-                        <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: "Sign Up" }} />
-                        <Stack.Screen name="Home" component={TopDrawer} options={{ headerShown: false }} />
-                        <Stack.Screen name="HomeScreen" component={HomeScreen} options={{ headerShown: false }} />
-                        <Stack.Screen name="Tasks" component={ListsTabs}
-                            options={({ navigation }) => ({
-                                title: "My Tasks",
-                                animation: "slide_from_right",
-                                headerTitleAlign: "center",
-                                headerStyle: {
-                                    borderBottomWidth: 0,
-                                    elevation: 0,
-                                    shadowOpacity: 0,
-                                },
-                                headerBackground: () => (
-                                    <LinearGradient
-                                        colors={["#4B4697", "#6C66BC", "#7D79C0"]}
-                                        style={{ flex: 1 }}
-                                    />
-                                ),
-                                headerLeft: () => (
-                                    <TouchableOpacity
-                                        onPress={() => navigation.popToTop()}
-                                        style={{ paddingHorizontal: 15 }}
-                                    >
-                                        <AntDesign name="leftcircle" size={26} color="#FFFFFF" />
-                                    </TouchableOpacity>
-                                ),
-                                headerRight: () => (
-                                    <TouchableOpacity
-                                        onPress={() => navigation.navigate("Tasks", { openModal: true })}
-                                        style={{ paddingHorizontal: 15, alignItems: "center", marginTop: 5 }}
-                                    >
-                                        <AntDesign name="plus" size={26} color="#FFFFFF" />
-                                        <Text style={{ fontSize: 10, color: "#FFFFFF", fontFamily: "monospace" }}>Add List</Text>
-                                    </TouchableOpacity>
-                                ),
-                                headerTitleStyle: {
-                                    fontFamily: "Zain-Regular",
-                                    fontSize: 24,
-                                    color: "#FFFFFF",
-                                },
-                            })}
+            <ThemeProvider>
+                <ListsProvider>
+                    <NavigationContainer>
+                        <Stack.Navigator>
+                            <Stack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: false }} />
+                            <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: "Sign Up" }} />
+                            <Stack.Screen name="Home" component={TopDrawer} options={{ headerShown: false }} />
+                            <Stack.Screen name="HomeScreen" component={HomeScreen} options={{ headerShown: false }} />
+                            <Stack.Screen name="Tasks" component={ListsTabs}
+                                options={() => ({
+                                    title: "My Tasks",
+                                    animation: "slide_from_right",
+                                    headerTitleAlign: "center",
+                                    headerTitleStyle: {
+                                        fontFamily: "Zain-Regular",
+                                        fontSize: 24,
+                                        color: "#FFFFFF",
+                                    },
+                                    headerShadowVisible: false,
+                                })}
+                            />
+                            <Stack.Screen name="TaskTimer" component={TaskTimer}
+                                options={({ navigation }) =>
+                                ({
+                                    title: "Task Timer",
+                                    animation: "slide_from_right",
+                                    headerTitleAlign: "center",
+                                    headerLeft: () => (
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                setTimeout(() => {
+                                                    navigation.navigate("Tasks", { listID: "Daily" })
+                                                }, 100);
+                                            }}
+                                            style={{ paddingHorizontal: 15 }}
+                                        >
+                                            <AntDesign name="leftcircle" size={26} color="#FFFFFF" />
+                                        </TouchableOpacity>
+                                    ),
+                                    headerTitleStyle: {
+                                        fontFamily: "Zain-Regular",
+                                        fontSize: 30,
+                                        color: "#FFFFFF",
+                                    },
+                                    headerShadowVisible: false,
+                                    gestureEnabled: false
+                                })}
 
-                        />
-                        <Stack.Screen name="TaskTimer" component={TaskTimer}
-                            options={({ navigation }) =>
-                            ({
-                                title: "Task Timer",
-                                animation: "slide_from_right",
-                                headerTitleAlign: "center",
-                                headerStyle: {
-                                    borderBottomWidth: 0,
-                                    elevation: 0,
-                                    shadowOpacity: 0,
-                                    backgroundColor: "#7D79C0"
-                                },
-                                headerLeft: () => (
-                                    <TouchableOpacity
-                                        onPress={() => {
-                                            setTimeout(() => {
-                                                navigation.navigate("Tasks", { listID: "Daily" })
-                                            }, 100);
-                                        }}
-                                        style={{ paddingHorizontal: 15 }}
-                                    >
-                                        <AntDesign name="leftcircle" size={26} color="#FFFFFF" />
-                                    </TouchableOpacity>
-                                ),
-                                headerTitleStyle: {
-                                    fontFamily: "Zain-Regular",
-                                    fontSize: 30,
-                                    color: "#FFFFFF",
-                                },
-                                gestureEnabled: false
-                            })}
-
-                        />
-                        <Stack.Screen name="ListTasks" component={ListTasks} options={{ headerShown: false }} />
-                        <Stack.Screen name="ListUpcoming" component={ListUpcoming} options={{ headerShown: false }} />
-                        <Stack.Screen name="TasksStart" component={TasksStart}
-                            options={({ navigation }) => ({
-                                title: "",
-                                animation: "slide_from_right",
-                                headerTitleAlign: "center",
-                                headerStyle: {
-                                    borderBottomWidth: 0,
-                                    elevation: 0,
-                                    shadowOpacity: 0,
-                                    backgroundColor: "#7D79C0"
-                                },
-                                headerLeft: () => (
-                                    <TouchableOpacity
-                                        onPress={() => navigation.goBack()}
-                                        style={{ paddingHorizontal: 15 }}
-                                    >
-                                        <AntDesign name="leftcircle" size={26} color="#FFFFFF" />
-                                    </TouchableOpacity>
-                                ),
-                            })} />
-                        <Stack.Screen name="Meals" component={Meals} />
-                        <Stack.Screen name="Focus" component={Focus} />
-                        <Stack.Screen name="Progress" component={Progress} />
-                    </Stack.Navigator>
-                </NavigationContainer>
-            </ListsProvider>
+                            />
+                            <Stack.Screen name="ListTasks" component={ListTasks} options={{ headerShown: false }} />
+                            <Stack.Screen name="ListUpcoming" component={ListUpcoming} options={{ headerShown: false }} />
+                            <Stack.Screen name="TasksStart" component={TasksStart}
+                                options={({ navigation }) => ({
+                                    title: "",
+                                    animation: "slide_from_right",
+                                    headerTitleAlign: "center",
+                                    headerLeft: () => (
+                                        <TouchableOpacity
+                                            onPress={() => navigation.goBack()}
+                                            style={{ paddingHorizontal: 15 }}
+                                        >
+                                            <AntDesign name="leftcircle" size={26} color="#FFFFFF" />
+                                        </TouchableOpacity>
+                                    ),
+                                    headerShadowVisible: false
+                                })} />
+                            <Stack.Screen name="Meals" component={Meals} />
+                            <Stack.Screen name="Focus" component={Focus} />
+                            <Stack.Screen name="Progress" component={Progress} />
+                        </Stack.Navigator>
+                    </NavigationContainer>
+                </ListsProvider>
+            </ThemeProvider>
         </>
     );
 }

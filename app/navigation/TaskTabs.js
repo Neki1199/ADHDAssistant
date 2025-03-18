@@ -4,13 +4,16 @@ import { createMaterialTopTabNavigator } from "@react-navigation/material-top-ta
 import { addNewList, changeList, deleteList } from "../screens/Tasks/TasksDB";
 import ListTasks from "../screens/Tasks/TabLists";
 import ListUpcoming from "../screens/Tasks/TabUpcoming";
-import { useIsFocused, useNavigation, useRoute } from "@react-navigation/native";
 import { AntDesign } from "@expo/vector-icons";
 import { ListsContext } from "../contexts/ListsContext";
+import { ThemeContext } from "../contexts/ThemeContext";
 
 const Tab = createMaterialTopTabNavigator();
 
 const ListModal = ({ modalVisible, setModalVisible, listName, setListName }) => {
+    const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
+
     const addList = () => {
         if (listName.trim() === "") {
             Alert.alert(
@@ -36,11 +39,11 @@ const ListModal = ({ modalVisible, setModalVisible, listName, setListName }) => 
                 <View style={styles.modalInside}>
                     <View style={styles.topModal}>
                         <TouchableOpacity onPress={() => closeModal()}>
-                            <AntDesign name="close" size={30} color={"#4B4697"} />
+                            <AntDesign name="close" size={30} color={theme.name === "light" ? "#4B4697" : "#FFFFFF"} />
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}>New List</Text>
                         <TouchableOpacity onPress={() => addList()}>
-                            <AntDesign name="checkcircle" size={30} color={"#4B4697"} />
+                            <AntDesign name="checkcircle" size={30} color={theme.name === "light" ? "#4B4697" : "#FFFFFF"} />
                         </TouchableOpacity>
                     </View>
                     <TextInput
@@ -48,6 +51,7 @@ const ListModal = ({ modalVisible, setModalVisible, listName, setListName }) => 
                         placeholder="Enter list name"
                         value={listName}
                         onChangeText={setListName}
+                        placeholderTextColor={theme.text}
                     />
                 </View>
             </View>
@@ -56,6 +60,9 @@ const ListModal = ({ modalVisible, setModalVisible, listName, setListName }) => 
 }
 
 const ChangeDeleteModal = ({ modalChangeVisible, setModalChangeVisible, setNewListName, renameList, selectedListName, newListName, isRenaming }) => {
+    const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
+
     const onDelete = async () => {
         deleteList(selectedListName);
         setModalChangeVisible(false);
@@ -68,11 +75,11 @@ const ChangeDeleteModal = ({ modalChangeVisible, setModalChangeVisible, setNewLi
                 <View style={styles.modalInside}>
                     <View style={styles.topModal}>
                         <TouchableOpacity onPress={() => { setModalChangeVisible(false), setNewListName("") }}>
-                            <AntDesign name="close" size={30} color={"#4B4697"} />
+                            <AntDesign name="close" size={30} color={theme.name === "light" ? "#4B4697" : "#FFFFFF"} />
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}>Change List</Text>
                         <TouchableOpacity onPress={renameList}>
-                            <AntDesign name="checkcircle" size={30} color={"#4B4697"} />
+                            <AntDesign name="checkcircle" size={30} color={theme.name === "light" ? "#4B4697" : "#FFFFFF"} />
                         </TouchableOpacity>
                     </View>
                     <TextInput
@@ -80,6 +87,7 @@ const ChangeDeleteModal = ({ modalChangeVisible, setModalChangeVisible, setNewLi
                         placeholder={selectedListName}
                         value={newListName}
                         onChangeText={setNewListName}
+                        placeholderTextColor={theme.text}
                     />
                     {isRenaming ? (
                         <ActivityIndicator size="large" color="#0000ff"
@@ -99,7 +107,7 @@ const ChangeDeleteModal = ({ modalChangeVisible, setModalChangeVisible, setNewLi
 export const ListsTabs = ({ route, navigation }) => {
     const { allLists } = useContext(ListsContext);
     const { listID } = route.params;
-    const isFocused = useIsFocused();
+    const { theme } = useContext(ThemeContext);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [listName, setListName] = useState("");
@@ -107,7 +115,32 @@ export const ListsTabs = ({ route, navigation }) => {
     const [newListName, setNewListName] = useState("");
     const [modalChangeVisible, setModalChangeVisible] = useState(false);
     const [isRenaming, setIsRenaming] = useState(false); // to not show the process of adding and deleting a list
-    const [currentTab, setCurrentTab] = useState(listID); // track active tab
+
+    // change header
+    useEffect(() => {
+        navigation.setOptions({
+            headerStyle: {
+                backgroundColor: theme.header
+            },
+            headerLeft: () => (
+                <TouchableOpacity
+                    onPress={() => navigation.popToTop()}
+                    style={{ paddingHorizontal: 15 }}
+                >
+                    <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
+                </TouchableOpacity>
+            ),
+            headerRight: () => (
+                <TouchableOpacity
+                    onPress={() => navigation.navigate("Tasks", { openModal: true })}
+                    style={{ paddingHorizontal: 15, alignItems: "center", marginTop: 5 }}
+                >
+                    <AntDesign name="plus" size={26} color="#FFFFFF" />
+                    <Text style={{ fontSize: 10, color: "#FFFFFF", fontFamily: "monospace" }}>Add List</Text>
+                </TouchableOpacity>
+            ),
+        });
+    }, [theme, navigation]);
 
     // params from App.js where the header is set
     useEffect(() => {
@@ -117,15 +150,11 @@ export const ListsTabs = ({ route, navigation }) => {
         }
     }, [route.params]);
 
-    // change status bar (different from others)
+    // change status bar
     useEffect(() => {
-        if (isFocused) {
-            StatusBar.setBackgroundColor("#4B4697");
-            StatusBar.setBarStyle("light-content");
-        } else {
-            StatusBar.setBackgroundColor("#7D79C0");
-        }
-    }, [isFocused]);
+        StatusBar.setBackgroundColor(theme.header);
+        StatusBar.setBarStyle("light-content");
+    }, [theme]);
 
     const renameList = async () => {
         if (newListName.trim() !== "") {
@@ -153,7 +182,6 @@ export const ListsTabs = ({ route, navigation }) => {
                 renameList={renameList}
                 newListName={newListName}
                 isRenaming={isRenaming}
-                currentTab={currentTab}
             />
 
             <ListModal
@@ -163,18 +191,19 @@ export const ListsTabs = ({ route, navigation }) => {
                 setListName={setListName}
             />
             <Tab.Navigator
+                key={allLists.length}
                 initialLayout={{ width: Dimensions.get("window").width }}
-                initialRouteName={currentTab}
+                initialRouteName={listID}
                 screenOptions={{
                     swipeEnabled: false,
                     animationEnabled: false,
                     tabBarActiveTintColor: "#FFFFFF",
-                    tabBarInactiveTintColor: "#000000",
+                    tabBarInactiveTintColor: theme.textTabTasks,
                     tabBarIndicatorStyle: {
                         backgroundColor: "#FFFFFF"
                     },
                     tabBarStyle: {
-                        backgroundColor: "#7D79C0",
+                        backgroundColor: theme.header,
                         elevation: 0,
                         shadowOpacity: 0
                     },
@@ -187,16 +216,6 @@ export const ListsTabs = ({ route, navigation }) => {
                         width: "auto",
                         paddingHorizontal: 22
                     },
-                }}
-                screenListeners={{
-                    tabPress: (e) => {
-                        // get selected tab
-                        const selectedTab = e.target.split("-")[0];
-                        // update currenttab
-                        if (selectedTab) {
-                            setCurrentTab(selectedTab);
-                        }
-                    }
                 }}
             >
                 {/* Daily first, then others, Upcoming last */}
@@ -230,7 +249,7 @@ export const ListsTabs = ({ route, navigation }) => {
     );
 }
 
-const styles = StyleSheet.create({
+const useStyles = (theme) => StyleSheet.create({
     modalContainer: {
         flex: 1,
         justifyContent: "center",
@@ -240,7 +259,7 @@ const styles = StyleSheet.create({
     modalInside: {
         width: "90%",
         padding: 20,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: theme.container,
         borderRadius: 10,
         alignItems: "center"
     },
@@ -248,7 +267,7 @@ const styles = StyleSheet.create({
         fontFamily: "Zain-Regular",
         fontSize: 25,
         marginBottom: 10,
-        color: "#4B4697"
+        color: theme.tabText
     },
     topModal: {
         flexDirection: "row",
@@ -256,10 +275,11 @@ const styles = StyleSheet.create({
         justifyContent: "space-between"
     },
     input: {
+        color: theme.text,
         fontFamily: "Zain-Regular",
         fontSize: 20,
         width: "90%",
-        backgroundColor: "#F0F0F0",
+        backgroundColor: theme.input,
         borderRadius: 20,
         padding: 20,
     },
@@ -274,7 +294,7 @@ const styles = StyleSheet.create({
         margin: 20,
         width: 40,
         height: 40,
-        backgroundColor: "#9B1515",
+        backgroundColor: theme.delete,
         borderRadius: 20,
         justifyContent: "center",
         alignItems: "center"

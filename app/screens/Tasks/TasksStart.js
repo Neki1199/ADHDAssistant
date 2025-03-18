@@ -1,13 +1,28 @@
-import React, { useEffect, useState } from "react"
+import React, { useContext, useEffect, useState } from "react"
 import { TouchableOpacity, Keyboard, StyleSheet, Text, View, Image, TouchableWithoutFeedback } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { CountdownCircleTimer } from "react-native-countdown-circle-timer"
+import { ThemeContext } from "../../contexts/ThemeContext";
 
 export default function TasksStart({ route, navigation }) {
     const tasks = route?.params?.tasks || [];
+    const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
+
     const [selectedTask, setSelectedTask] = useState(null);
     const [openTaskScreen, setOpenTaskScreen] = useState(false);
     const [timerCompleted, setTimerCompleted] = useState(false);
+
+    useEffect(() => {
+        navigation.setOptions({
+            headerStyle: {
+                borderBottomWidth: 0,
+                elevation: 0,
+                shadowOpacity: 0,
+                backgroundColor: theme.header
+            },
+        });
+    }, [theme, navigation])
 
     // select a random task
     useEffect(() => {
@@ -23,7 +38,7 @@ export default function TasksStart({ route, navigation }) {
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <View style={styles.container}>
                 <LinearGradient
-                    colors={["#7D79C0", "#EBEAF6"]}
+                    colors={[theme.header, theme.linear2]}
                     style={styles.gradient}>
 
                     {selectedTask && (
@@ -58,7 +73,7 @@ export default function TasksStart({ route, navigation }) {
 
                     {/* screen for task without timer (show an image and checkbox) */}
                     {openTaskScreen && (
-                        <View style={styles.noDurationContainer}>
+                        <View style={[styles.noDurationContainer, { backgroundColor: theme.name === "dark" && "rgba(255, 255, 255, 0.2)" }]}>
                             <Text style={styles.timerTitle}>When the timer stops <Text style={styles.timerTitleStart}>START</Text> your task!</Text>
                             <Text style={styles.timerText}>Even if you don't want to...</Text>
                             {!timerCompleted ? (
@@ -92,10 +107,8 @@ export default function TasksStart({ route, navigation }) {
                                         );
                                     }}
                                 </CountdownCircleTimer>
-
                             ) : (
-
-                                <TouchableOpacity style={[styles.btn, { marginTop: 20 }]} onPress={() => navigation.goBack()}>
+                                <TouchableOpacity style={[styles.btn, { marginTop: 20, backgroundColor: theme.name === "dark" && "#1C1C1C" }]} onPress={() => navigation.goBack()}>
                                     <Text style={styles.btnText}>Return To Tasks</Text>
                                 </TouchableOpacity>
                             )}
@@ -109,7 +122,7 @@ export default function TasksStart({ route, navigation }) {
 };
 
 
-const styles = StyleSheet.create({
+const useStyles = (theme) => StyleSheet.create({
     container: {
         flex: 1
     },
@@ -120,7 +133,7 @@ const styles = StyleSheet.create({
     },
     containerTitle: {
         width: "90%",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: theme.container,
         alignItems: "center",
         justifyContent: "center",
         borderRadius: 15,
@@ -135,15 +148,16 @@ const styles = StyleSheet.create({
         fontSize: 30,
         width: "80%",
         textAlign: "center",
-        color: "#1D1869"
+        color: theme.title
     },
     textAsk: {
+        color: theme.text,
         fontFamily: "Zain-Regular",
         fontSize: 26,
     },
     askContainer: {
         padding: 20,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: theme.container,
         width: "90%",
         borderRadius: 15,
         justifyContent: "center",
@@ -195,7 +209,7 @@ const styles = StyleSheet.create({
         fontSize: 30,
         width: "80%",
         textAlign: "center",
-        color: "#1D1869"
+        color: theme.title
     },
     timerTitleStart: {
         fontFamily: "monospace",
@@ -208,7 +222,7 @@ const styles = StyleSheet.create({
         fontFamily: "Zain-Regular",
         fontSize: 18,
         textAlign: "center",
-        color: "#606060",
+        color: theme.textTimer,
         marginBottom: 50
     }
 });

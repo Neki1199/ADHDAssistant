@@ -1,8 +1,6 @@
 {
   "expo": {
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "name": "ADHDrive",
     "slug": "adhd-app",
     "version": "1.0.0",
@@ -26,13 +24,13 @@
       }
     },
     "android": {
+      "softwareKeyboardLayoutMode": "pan",
       "package": "com.castillo.adhdassistant",
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logoADHD.png",
         "backgroundColor": "#ffffff"
       },
-      "softwareKeyboardLayoutMode": "pan",
       "googleServicesFile": "./google-services.json"
     },
     "web": {
@@ -41,6 +39,40 @@
       "favicon": "./assets/images/logo.png"
     },
     "plugins": [
+      "expo-build-properties",
+      [
+        "@react-native-community/datetimepicker",
+        {
+          "android": {
+            "datePicker": {
+              "colorAccent": {
+                "light": "#4B4697",
+                "dark": "#1C1C1C"
+              },
+              "textColorPrimary": {
+                "light": "#444444",
+                "dark": "#FFFFFF"
+              },
+              "windowBackground": {
+                "light": "#FFFFFF",
+                "dark": "#444444"
+              },
+              "textColor": {
+                "light": "#000000",
+                "dark": "#FFFFFF"
+              }
+            },
+            "timePicker": {
+              "background": { "light": "#FFFFFF", "dark": "#444444" },
+              "numbersBackgroundColor": {
+                "light": "#C0C0C0",
+                "dark": "#E0E0E0"
+              },
+              "headerBackground": { "light": "#4B4697", "dark": "#1C1C1C" }
+            }
+          }
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
@@ -54,7 +86,8 @@
       "expo-font"
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "turboModules": true
     },
     "extra": {
       "router": {

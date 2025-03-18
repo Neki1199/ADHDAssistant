@@ -1,8 +1,11 @@
-import React from "react";
+import React, { useContext } from "react";
 import { View, TouchableWithoutFeedback, StyleSheet, Text, TouchableOpacity, Modal, FlatList } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+import { ThemeContext } from "../../../contexts/ThemeContext";
 
 const TaskDetails = ({ modalInputs, taskDetails, showLists, listsItems, setShowLists, resetTaskDetail, otherList, setOtherList }) => {
+    const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
 
     return (
         <View style={styles.inputsContainer}>
@@ -12,8 +15,9 @@ const TaskDetails = ({ modalInputs, taskDetails, showLists, listsItems, setShowL
 
                 return (
                     <View key={index} style={styles.itemInput}>
+                        {/* name of detail */}
                         <View style={styles.iconAndName}>
-                            <AntDesign name={icon} size={22} color={"#000000"} />
+                            <AntDesign name={icon} size={22} color={theme.text} />
                             <Text style={styles.inputText}>{nameInput}</Text>
                         </View>
                         {/* modal to select the list */}
@@ -21,16 +25,18 @@ const TaskDetails = ({ modalInputs, taskDetails, showLists, listsItems, setShowL
                             <Modal visible={showLists} transparent={true} animationType="slide">
                                 <TouchableWithoutFeedback onPress={() => setShowLists(false)} accessible={false}>
                                     <View style={[styles.modalContainer, { justifyContent: "center" }]}>
-                                        <View style={[styles.modalInside,
-                                        { height: "auto", maxHeight: 300, width: "70%", borderRadius: 30, backgroundColor: "#FFFFFF" }]}>
+                                        <View style={styles.modalInside}>
                                             <FlatList
                                                 style={{ width: "100%" }}
-                                                showsVerticalScrollIndicator={false}
                                                 keyExtractor={(item) => item.id}
                                                 data={listsItems}
                                                 renderItem={({ item }) => (
                                                     <TouchableOpacity style={[styles.listItem,
-                                                    { backgroundColor: item.id === otherList ? "#9B94D7" : "#EBEAF6" }]}
+                                                    {
+                                                        backgroundColor: theme.name === "light" ?
+                                                            (item.id === otherList ? "#9B94D7" : "#EBEAF6")
+                                                            : (item.id === otherList ? "#24214A" : "#7C7A97")
+                                                    }]}
                                                         onPress={() => {
                                                             setShowLists(false);
                                                             setOtherList(item.id);
@@ -48,22 +54,26 @@ const TaskDetails = ({ modalInputs, taskDetails, showLists, listsItems, setShowL
                         )}
 
                         {cancelSet ? (
+                            // cancel icon at right
                             <TouchableOpacity style={styles.iconAndName} onPress={() => resetTaskDetail(nameInput)}>
-                                <Text style={[styles.inputText, { color: "#4B4697" }]}>{setValue}</Text>
-                                <AntDesign name="close" size={22} color={"#000000"} />
+                                <Text style={[styles.inputText, { color: theme.tabText }]}>{setValue}</Text>
+                                <AntDesign name="close" size={22} color={theme.tabText} />
                             </TouchableOpacity>
                         ) : (
+                            // button right
                             <TouchableOpacity
                                 style={styles.iconAndName} onPress={inputFunction}
                                 disabled={nameInput === "List" && listsItems.length === 1}
                             >
                                 <Text style={[styles.inputText, {
                                     color: nameInput === "List" &&
-                                        listsItems.length === 1 ? "#C0C0C0" : "#4B4697"
+                                        listsItems.length === 1 ? theme.name === "light" ? "#C0C0C0" : "#A0A0A0"
+                                        : theme.tabText
                                 }]}>{setValue}</Text>
                                 <AntDesign name="right" size={22}
                                     color={nameInput === "List" &&
-                                        listsItems.length === 1 ? "#C0C0C0" : "#00000"}
+                                        listsItems.length === 1 ? theme.name === "light" ? "#C0C0C0" : "#A0A0A0"
+                                        : theme.text}
                                 />
                             </TouchableOpacity>
                         )}
@@ -75,7 +85,7 @@ const TaskDetails = ({ modalInputs, taskDetails, showLists, listsItems, setShowL
 };
 
 
-const styles = StyleSheet.create({
+const useStyles = (theme) => StyleSheet.create({
     modalContainer: {
         flex: 1,
         justifyContent: "flex-end",
@@ -83,20 +93,20 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(0, 0, 0, 0.8)",
     },
     modalInside: {
-        width: "100%",
-        height: "78%",
         padding: 20,
-        backgroundColor: "#EBEAF6",
-        borderTopLeftRadius: 30,
-        borderTopRightRadius: 30,
-        alignItems: "center"
+        backgroundColor: theme.container,
+        alignItems: "center",
+        height: "auto",
+        maxHeight: 300,
+        width: "70%",
+        borderRadius: 15
     },
     inputsContainer: {
         marginTop: 40,
         width: "100%"
     },
     itemInput: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: theme.itemModal,
         justifyContent: "space-between",
         flexDirection: "row",
         paddingHorizontal: 12,
@@ -112,19 +122,21 @@ const styles = StyleSheet.create({
     inputText: {
         fontFamily: "Zain-Regular",
         fontSize: 22,
-        color: '#000000'
+        color: theme.text
     },
     listItem: {
         justifyContent: "center",
         alignItems: "center",
         padding: 20,
         width: "90%",
-        backgroundColor: "#EBEAF6",
+        backgroundColor: theme.header,
         margin: 10,
         borderRadius: 15
     },
     listText: {
-
+        fontFamily: "Zain-Regular",
+        fontSize: 18,
+        color: theme.text
     }
 });
 

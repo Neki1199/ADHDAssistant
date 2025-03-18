@@ -7,26 +7,44 @@ import { TimerPickerModal } from "react-native-timer-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import * as Notifications from "expo-notifications";
-import { LinearGradient } from "expo-linear-gradient";
 import TaskDetails from "./TaskDetails";
 import RepeatSelection from "./RepeatSelection";
+import { ThemeContext } from "../../../contexts/ThemeContext";
 
 // when added task, schedule notification
-const scheduleNotification = async (time, message) => {
-    await Notifications.scheduleNotificationAsync({
+const scheduleNotification = (date, message, taskID) => {
+    Notifications.scheduleNotificationAsync({
         content: {
-            title: "Task Reminder",
+            title: "🔔 Task Reminder",
             body: message,
             sound: true,
+            data: { taskID }
         },
-        trigger: { date: time }
+        trigger: { type: "date", timeStamp: date.getTime() }
     });
 };
+
+// remove one notification
+const removeNotification = async (taskID) => {
+    await Notifications.cancelScheduledNotificationAsync(taskID);
+};
+
+// remove all notifications from a task
+const removeRepeatNotifications = async (taskID) => {
+    const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
+    for (const notification of allNotifications) {
+        if (notification.data?.taskID === taskID) {
+            await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+        }
+    }
+}
 
 // task = null, when long press the task to change or delete
 // if null, is a new task, if not null, is being edited
 const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
     const { allLists } = useContext(ListsContext);
+    const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
 
     const [loading, setLoading] = useState(false);
     // calendar, time ui
@@ -94,7 +112,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
         }
     };
 
-    const closeSave = () => {
+    const closeSave = (newData = null) => {
         setModalVisible(false);
         if (task) {
             setName(name);
@@ -102,9 +120,9 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
             setOtherList(otherList);
             setRepeat(repeat);
             setTaskDetails({
-                Time: { value: task?.time || "", cancel: !!task?.time },
-                Reminder: { value: task?.reminder || "", cancel: !!task?.reminder },
-                Duration: { value: task?.duration || "", cancel: !!task?.duration },
+                Time: { value: newData.time || "", cancel: !!newData.time },
+                Reminder: { value: newData.reminder || "", cancel: !!newData.reminder },
+                Duration: { value: newData.duration || "", cancel: !!newData.duration }
             });
         } else {
             clearAll();
@@ -124,7 +142,8 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
         setLoading(true); // loading indicator after done add task
 
         try {
-            let parentID = task ? task.id : null; // parent id to track repeated tasks
+            // if its a parent task, get task.id, if its a repeated task, get its parent id
+            let parentID = task ? task.parentID ? task.parentID : task.id : null;
 
             if (task) {
                 const newData = {
@@ -138,12 +157,21 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                     completedDate
                 };
 
+                // if reminder changed, delete old notification and add new one
+                if (taskDetails.Reminder.value && task.reminder !== taskDetails.Reminder.value) {
+                    await removeNotification(parentID);
+                    const reminderTime = dayjs(`${date} ${taskDetails.Reminder.value}`, "YYYY-MM-DD HH:mm").toDate();
+                    scheduleNotification(reminderTime, `🔔 Remember your task "${name}". Starts at ${taskDetails.Reminder.value}`, parentID);
+                };
+
                 // handle changes in repeat (delete previous, and add new ones)
                 const prevRepeat = task.repeat; // get previous repeat
                 if (prevRepeat.type !== repeat.type || prevRepeat.every !== repeat.every
                     || prevRepeat.days !== repeat.days || prevRepeat.dayMonth !== repeat.dayMonth
                     || prevRepeat.ends !== repeat.ends) {
                     await deleteRepeatedTasks(otherList, parentID); // delete all repeated tasks
+                    // remove all repeated notifications
+                    await removeRepeatNotifications(parentID);
 
                     if (repeat.type !== "Once") {
                         // get dates from new repeat
@@ -153,12 +181,17 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                             await addTask(name, dateRepeat, taskDetails.Time.value, taskDetails.Reminder.value,
                                 repeat, taskDetails.Duration.value, completed,
                                 otherList, completedDate, parentID);
+
+                            if (taskDetails.Reminder.value) {
+                                const reminderTime = dayjs(`${dateRepeat} ${taskDetails.Reminder.value}`, "YYYY-MM-DD HH:mm").toDate(); // values: date and time
+                                scheduleNotification(reminderTime, `🔔 Remember your task "${name}". Starts at ${taskDetails.Reminder.value}`, parentID);
+                            }
                         }
                     }
                 }
 
                 await changeTask(task, newData); // update task if already exist
-
+                closeSave(newData);
             } else { // its a new task
                 const newTask = await addTask(name, date, taskDetails.Time.value, taskDetails.Reminder.value,
                     repeat, taskDetails.Duration.value, completed,
@@ -166,27 +199,33 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
 
                 parentID = newTask.id;
 
+                // add reminder for the main task
+                if (taskDetails.Reminder.value && (!task || task.reminder !== taskDetails.Reminder.value)) {
+                    const reminderTime = dayjs(`${date} ${taskDetails.Reminder.value}`, "YYYY-MM-DD HH:mm").toDate();
+                    scheduleNotification(reminderTime, `🔔 Remember your task "${name}". Starts at ${taskDetails.Reminder.value}`, parentID);
+                };
+
                 // if repeat is set
                 if (repeat.type !== "Once") {
                     let datesRepeat = getDatesRepeat(date);
                     for (const dateRepeat of datesRepeat) {
-                        await addTask(name, dateRepeat, taskDetails.Time.value, taskDetails.Reminder.value,
+                        const newTask = await addTask(name, dateRepeat, taskDetails.Time.value, taskDetails.Reminder.value,
                             repeat, taskDetails.Duration.value, completed,
                             otherList, completedDate, parentID);
+
+                        // add notification
+                        if (taskDetails.Reminder.value) {
+                            const reminderTime = dayjs(`${dateRepeat} ${taskDetails.Reminder.value}`, "YYYY-MM-DD HH:mm").toDate(); // values: date and time
+                            scheduleNotification(reminderTime, `🔔 Remember your task "${name}". Starts at ${taskDetails.Reminder.value}`, parentID);
+                        }
                     }
                 }
+                closeSave();
             }
-            // TODO: add reminders for each task, repeated as well
-            // if reminder changed, update the notification
-            if (taskDetails.Reminder.value && (!task || task.reminder !== taskDetails.Reminder.value)) {
-                const reminderTime = dayjs(`${date} ${taskDetails.Reminder.value}`, "YYYY-MM-DD HH:mm").toDate(); // values: date and time
-                scheduleNotification(reminderTime, `Hey! Remember your task "${name}". Starts at ${taskDetails.Reminder.value}`);
-            };
         } catch (error) {
             console.log("Error saving task: ", error)
         } finally {
             setLoading(false);
-            closeSave();
         }
     };
 
@@ -359,13 +398,13 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                             <>
                                 <View style={styles.topModal}>
                                     <TouchableOpacity onPress={() => closeModal()}>
-                                        <AntDesign name="close" size={30} color={"#4B4697"} />
+                                        <AntDesign name="close" size={30} color={theme.tabText} />
                                     </TouchableOpacity>
                                     <Text style={styles.modalTitle}>
                                         {task ? "Edit Task" : "New Task"}
                                     </Text>
                                     <TouchableOpacity onPress={() => saveTask()}>
-                                        <AntDesign name="checkcircle" size={30} color={"#4B4697"} />
+                                        <AntDesign name="checkcircle" size={30} color={theme.tabText} />
                                     </TouchableOpacity>
                                 </View>
 
@@ -375,6 +414,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                                     placeholder="Task Name"
                                     value={name}
                                     onChangeText={setName}
+                                    placeholderTextColor={theme.name === "light" ? "#808080" : "#FFFFFF"}
                                 />
 
                                 {/* task details */}
@@ -422,10 +462,9 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                                         onCancel={() => setShowDurationPicker(false)}
                                         closeOnOverlayPress
                                         hideSeconds
-                                        LinearGradient={LinearGradient}
                                         hourLimit={{ max: 2, min: 0 }}
                                         styles={{
-                                            theme: "light",
+                                            theme: theme.name === "light" ? "light" : "dark",
                                             pickerItem: {
                                                 fontFamily: "monospace"
                                             },
@@ -437,7 +476,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                                                 fontSize: 26
                                             },
                                             cancelButton: {
-                                                color: "#4B4697",
+                                                color: theme.name === "light" ? "#4B4697" : "#FFFFFF",
                                                 borderColor: "#4B4697"
                                             },
                                             confirmButton: {
@@ -457,7 +496,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                             </>
                         ) : (
                             <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                                <ActivityIndicator size="large" color="#4B4697" />
+                                <ActivityIndicator size="large" color={theme.primary} />
                             </View>
                         )}
                     </View>
@@ -468,7 +507,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const useStyles = (theme) => StyleSheet.create({
     modalContainer: {
         flex: 1,
         justifyContent: "flex-end",
@@ -479,7 +518,7 @@ const styles = StyleSheet.create({
         width: "100%",
         height: "78%",
         padding: 20,
-        backgroundColor: "#EBEAF6",
+        backgroundColor: theme.modalNewTask,
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
         alignItems: "center"
@@ -488,7 +527,7 @@ const styles = StyleSheet.create({
         fontFamily: "Zain-Regular",
         fontSize: 25,
         marginBottom: 10,
-        color: "#4B4697"
+        color: theme.tabText
     },
     topModal: {
         flexDirection: "row",
@@ -501,7 +540,8 @@ const styles = StyleSheet.create({
         textAlign: "center",
         fontSize: 20,
         width: "100%",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: theme.itemModal,
+        color: theme.text,
         borderRadius: 10,
         padding: 15,
         marginTop: 20
@@ -510,7 +550,7 @@ const styles = StyleSheet.create({
         marginTop: 20,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#AC2121",
+        backgroundColor: theme.delete,
         width: 50,
         height: 50,
         borderRadius: 30

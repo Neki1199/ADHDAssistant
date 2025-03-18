@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useContext, useState } from 'react';
+import { View, StyleSheet } from 'react-native';
 import SegmentedControlTab from "react-native-segmented-control-tab";
 import EmotionsProgress from "./Emotions/EmotionsProgress";
 import TasksProgress from "./Tasks/TasksProgress";
 import { LinearGradient } from 'expo-linear-gradient';
+import { ThemeContext } from '../contexts/ThemeContext';
 
 const Progress = () => {
+  const { theme } = useContext(ThemeContext);
+  const styles = useStyles(theme);
   const [selectedIndex, setSelectedIndex] = useState(0); // start at emotions
 
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={["#7D79C0", "#EBEAF6"]}
+        colors={[theme.header, theme.linear2]}
         style={styles.gradient}>
         <SegmentedControlTab
           values={["Emotions", "Tasks"]}
@@ -39,7 +42,7 @@ So when changed of segment tab, it wont loose the state it was */}
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -53,13 +56,14 @@ const styles = StyleSheet.create({
     marginBottom: 20
   },
   tab: {
+    backgroundColor: theme.tab,
     borderColor: "transparent"
   },
   activeTab: {
-    backgroundColor: "#0F0A51"
+    backgroundColor: theme.activetab
   },
   tabText: {
-    color: "#4B4697",
+    color: theme.tabText,
     fontSize: 16,
     fontFamily: "Zain-Regular"
   },

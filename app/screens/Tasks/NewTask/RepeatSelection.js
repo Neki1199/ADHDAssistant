@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { View, StyleSheet, Text, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, Alert } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import DropDownPicker from "react-native-dropdown-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { ThemeContext } from "../../../contexts/ThemeContext";
 import dayjs from "dayjs";
 
 const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRepetition, repeat }) => {
+    const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
     const [open, setOpen] = useState(false); // open dropddown
     const [type, setType] = useState("Once");
     const [every, setEvery] = useState("1");
@@ -131,14 +134,13 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
                         <View style={styles.topModal}>
                             <TouchableOpacity onPress={() => clearAll()
                             }>
-                                <AntDesign name="close" size={30} color={"#4B4697"} />
+                                <AntDesign name="close" size={30} color={theme.tabText} />
                             </TouchableOpacity>
                             <Text style={styles.modalTitle}>Set Repeat</Text>
                             <TouchableOpacity onPress={() => setAll()}>
-                                <AntDesign name="checkcircle" size={30} color={"#4B4697"} />
+                                <AntDesign name="checkcircle" size={30} color={theme.tabText} />
                             </TouchableOpacity>
                         </View>
-
 
                         {/* repeat type */}
                         <View style={styles.inntervalContainer}>
@@ -153,6 +155,7 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
                                         value={every}
                                         onBlur={handleRepeatBlur}
                                         onChangeText={handleEvery}
+                                        placeholderTextColor={theme.name === "light" ? "#000000" : "#FFFFFF"}
                                     />
                                 )}
                                 <View style={styles.viewDropdown}>
@@ -168,9 +171,9 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
                                         style={styles.dropdown}
                                         selectedItemContainerStyle={{ backgroundColor: "#D8D5FF" }}
                                         selectedItemLabelStyle={{ color: "#4B4697" }}
-                                        dropDownContainerStyle={{ borderColor: "#C0C0C0" }}
-                                        itemSeparatorStyle={{ backgroundColor: "#C0C0C0" }}
-                                        textStyle={{ fontFamily: "Zain-Regular", fontSize: 20 }}
+                                        dropDownContainerStyle={{ borderColor: theme.name === "light" && "#C0C0C0", backgroundColor: theme.itemNew }}
+                                        itemSeparatorStyle={{ backgroundColor: theme.name === "light" && "#C0C0C0" }}
+                                        textStyle={{ fontFamily: "Zain-Regular", fontSize: 20, color: theme.text }}
                                     />
                                 </View>
                             </View>
@@ -181,10 +184,18 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
                                     {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
                                         <TouchableOpacity
                                             key={day}
-                                            style={[styles.days, { backgroundColor: days.includes(day) ? "#4B4697" : "#FFFFFF" }]}
+                                            style={[styles.days, {
+                                                backgroundColor: theme.name === "light"
+                                                    ? (days.includes(day) ? "#4B4697" : "#FFFFFF")
+                                                    : (days.includes(day) ? "#171443" : "#7C7A97")
+                                            }]}
                                             onPress={() => addDay(day)}
                                         >
-                                            <Text style={[styles.textDay, { color: days.includes(day) ? "#FFFFFF" : "#2C2679" }]}>{day}</Text>
+                                            <Text style={[styles.textDay, {
+                                                color: theme.name === "light"
+                                                    ? (days.includes(day) ? "#FFFFFF" : "#2C2679")
+                                                    : "#FFFFFF"
+                                            }]}>{day}</Text>
                                         </TouchableOpacity>
                                     ))}
                                 </View>
@@ -200,12 +211,18 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
                                             style={[styles.btn, {
                                                 width: dayMonth !== "Last" ? 200 : 100,
                                                 height: dayMonth !== "Last" && 90,
-                                                backgroundColor: dayMonth !== "Last" ? "#4B4697" : "#FFFFFF",
+                                                backgroundColor: theme.name === "light" ?
+                                                    (dayMonth !== "Last" ? "#4B4697" : "#FFFFFF")
+                                                    : (dayMonth !== "Last" ? "#171443" : "#7C7A97"),
                                                 flexDirection: "row",
                                                 gap: 20
                                             }]}
                                         >
-                                            <Text style={[styles.btnText, { color: dayMonth !== "Last" ? "#FFFFFF" : "#2C2679" }]}>Day</Text>
+                                            <Text style={[styles.btnText, {
+                                                color: theme.name === "light" ?
+                                                    (dayMonth !== "Last" ? "#FFFFFF" : "#2C2679")
+                                                    : "#FFFFFF"
+                                            }]}>Day</Text>
                                             {dayMonth !== "Last" && (
                                                 <TextInput
                                                     // make if entered 0, put 1. No more than 31 days
@@ -221,9 +238,17 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
 
                                         <TouchableOpacity
                                             onPress={() => setDayMonth("Last")}
-                                            style={[styles.btn, { width: 100, backgroundColor: dayMonth === "Last" ? "#4B4697" : "#FFFFFF" }]}
+                                            style={[styles.btn, {
+                                                width: 100, backgroundColor: theme.name === "light" ?
+                                                    (dayMonth === "Last" ? "#4B4697" : "#FFFFFF")
+                                                    : (dayMonth === "Last" ? "#171443" : "#7C7A97")
+                                            }]}
                                         >
-                                            <Text style={[styles.btnText, { color: dayMonth === "Last" ? "#FFFFFF" : "#2C2679" }]}>Last Day</Text>
+                                            <Text style={[styles.btnText, {
+                                                color: theme.name === "light" ?
+                                                    (dayMonth === "Last" ? "#FFFFFF" : "#2C2679")
+                                                    : "#FFFFFF"
+                                            }]}>Last Day</Text>
                                         </TouchableOpacity>
                                     </View>
                                 </View>
@@ -234,38 +259,53 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
                         {/* when the repeat ends */}
                         <View style={styles.endRepeatContainer}>
                             <Text style={styles.textTitle}>End Repeat</Text>
+                            {/* never button */}
                             <TouchableOpacity
                                 disabled={type === "Once"}
                                 style={[styles.btn, {
-                                    backgroundColor: ends === "Never" ? "#4B4697" : "#FFFFFF",
+                                    backgroundColor: theme.name === "light" ?
+                                        (ends === "Never" ? "#4B4697" : "#FFFFFF")
+                                        : (ends === "Never" ? "#171443" : "#7C7A97"),
                                     opacity: type === "Once" ? 0.5 : 1
                                 }]}
                                 onPress={() => {
                                     setEnds("Never");
                                     setIsOnDateSelected(false);
                                 }}>
-                                <Text style={[styles.btnText, { color: ends === "Never" ? "#FFFFFF" : "#4B4697" }]}>Never</Text>
+                                <Text style={[styles.btnText, {
+                                    color: theme.name === "light"
+                                        ? (ends === "Never" ? "#FFFFFF" : "#4B4697")
+                                        : "#FFFFFF"
+                                }]}>Never</Text>
                             </TouchableOpacity>
 
+                            {/* on date button */}
                             <TouchableOpacity
                                 disabled={type === "Once"}
                                 style={[styles.btn, {
                                     flexDirection: "row", gap: 10,
-                                    backgroundColor: ends !== "Never" ? "#4B4697" : "#FFFFFF",
+                                    backgroundColor: theme.name === "light" ?
+                                        (ends !== "Never" ? "#4B4697" : "#FFFFFF")
+                                        : (ends !== "Never" ? "#171443" : "#7C7A97"),
                                     opacity: type === "Once" ? 0.5 : 1
                                 }]}
                                 onPress={() => {
                                     setIsOnDateSelected(true);
                                     setShowPicker(true)
                                 }}>
-                                <Text style={[styles.btnText, { color: ends !== "Never" ? "#FFFFFF" : "#4B4697" }]}>On Date</Text>
-                                {ends !== "Never" &&
-                                    (<Text style={[styles.btnText, { color: ends !== "Never" ? "#FFFFFF" : "#4B4697" }]}>{dayjs(ends).format("DD MMM YYYY")}</Text>)
-                                }
+                                <Text style={[styles.btnText, {
+                                    color: theme.name === "light"
+                                        ? (ends !== "Never" ? "#FFFFFF" : "#4B4697")
+                                        : "#FFFFFF"
+                                }]}>
+                                    On Date
+                                    {ends !== "Never" && ` ${dayjs(ends).format("DD MMM YYYY")}`}
+                                </Text>
                             </TouchableOpacity>
 
                             {isOnDateSelected && showPicker && (
                                 <DateTimePicker
+
                                     value={ends === "Never" ? dayjs(date).toDate() : dayjs(ends).toDate()}
                                     mode="date"
                                     display="default"
@@ -277,12 +317,12 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
                     </View>
                 </View>
             </TouchableWithoutFeedback>
-        </Modal>
+        </Modal >
     );
 };
 
 
-const styles = StyleSheet.create({
+const useStyles = (theme) => StyleSheet.create({
     modalContainer: {
         flex: 1,
         justifyContent: "flex-end",
@@ -293,7 +333,7 @@ const styles = StyleSheet.create({
         height: "78%",
         alignItems: "center",
         padding: 25,
-        backgroundColor: "#EBEAF6",
+        backgroundColor: theme.linear2,
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
     },
@@ -301,7 +341,7 @@ const styles = StyleSheet.create({
         fontFamily: "Zain-Regular",
         fontSize: 25,
         marginBottom: 10,
-        color: "#4B4697"
+        color: theme.tabText
     },
     topModal: {
         flexDirection: "row",
@@ -323,17 +363,19 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     input: {
+        color: theme.text,
         fontFamily: "Zain-Regular",
         textAlign: "center",
         fontSize: 24,
         width: 60,
         height: 60,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: theme.itemNewText,
         borderRadius: 10,
         padding: 15,
         marginTop: 20
     },
     dropdown: {
+        backgroundColor: theme.itemNewText,
         borderWidth: 0,
         height: 60,
         width: "100%"
@@ -343,6 +385,7 @@ const styles = StyleSheet.create({
         borderRadius: 10
     },
     textTitle: {
+        color: theme.text,
         fontFamily: "Zain-Regular",
         fontSize: 22
     },

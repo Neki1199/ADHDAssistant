@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef, useMemo, useCallback } from 'react';
-import { View, StyleSheet, Text, FlatList, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Text, FlatList, ScrollView, Image, TouchableOpacity, ActivityIndicator, SafeAreaView } from 'react-native';
 import { getUncompletedMonth } from './TasksDB';
 import { ListsContext } from "../../contexts/ListsContext";
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,10 +8,12 @@ import { AntDesign } from '@expo/vector-icons';
 import { sortTasks } from './TabLists';
 import TaskItem from './TaskItem';
 import dayjs from "dayjs";
+import { ThemeContext } from '../../contexts/ThemeContext';
 
-const ListUpcoming = ({ route, navigation }) => {
-    const { listID } = route.params;
+const ListUpcoming = ({ navigation }) => {
     const { allLists } = useContext(ListsContext);
+    const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
     const [showCalendar, setShowCalendar] = useState(true);
     const [showNoDueDate, setShowNoDueDate] = useState(false);
 
@@ -20,6 +22,8 @@ const ListUpcoming = ({ route, navigation }) => {
     const [selectedDateTasks, setSelectedDateTasks] = useState([]); // task of selected date
     const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
     const [currentMonth, setCurrentMonth] = useState(dayjs().format("YYYY-MM"));
+    const [calendarKey, setCalendarKey] = useState(0);
+    const [loading, setLoading] = useState(false); //loading when a list is deleted (if not it will get the screen white)
 
     const markedDates = useRef({});
     const cachedData = useRef({}); // use same data if there is no change
@@ -34,13 +38,30 @@ const ListUpcoming = ({ route, navigation }) => {
             return all;
         }, {});
 
+    // update calendar theme when theme changes
+    useEffect(() => {
+        setCalendarKey((prev) => prev + 1);
+    }, [theme]);
+
+    // when a list is deleted and currently in upcoming, it gets blank
+    // set timer to not show blank
+    useEffect(() => {
+        setLoading(true);
+        const timer = setTimeout(() => setLoading(false), 500); // delay to set false
+
+        // Recalculate tasks
+        const [year, month] = currentMonth.split("-");
+        getMonthTasks(month, year);
+
+        return () => clearTimeout(timer);
+    }, [allLists]);
+
     const getMonthTasks = async (month, year) => {
         const dateCache = `${year}-${month}`;
 
         if (cachedData.current[dateCache]) {
             // use ref data
             setTasks(cachedData.current[dateCache]);
-            setIsLoading(false);
             return;
         }
 
@@ -98,7 +119,6 @@ const ListUpcoming = ({ route, navigation }) => {
             });
         });
 
-
         markedDates.current = getMarkedDates;
         // add undated tasks, and set tasks for the selected date
         setUndatedTasks(undatedTasks);
@@ -147,106 +167,115 @@ const ListUpcoming = ({ route, navigation }) => {
     }, [tasks]);
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <LinearGradient
-                colors={["#7D79C0", "#EBEAF6"]}
+                colors={[theme.header, theme.linear2]}
                 style={styles.gradient}>
-                <ScrollView
-                    contentContainerStyle={styles.scrollViewContent}
-                    showsVerticalScrollIndicator={false}
-                >
-                    <View style={styles.containerCalendar}>
-                        {showCalendar ? (
-                            <Calendar
-                                firstDay={1}
-                                markedDates={{
-                                    ...markedDates.current,
-                                    [selectedDate]: {
-                                        ...markedDates.current[selectedDate],
-                                        selected: true
-                                    }
-                                }}
-                                markingType="multi-dot"
-                                onDayPress={(day) => dayPress(day.dateString)}
-                                onMonthChange={(month) => onMonthChange(month)}
-                                hideExtraDays={true}
-                                theme={{
-                                    todayTextColor: "#3526FF",
-                                    textSectionTitleColor: "#B6C1CD",
-                                    arrowColor: "#4B4697",
-                                    selectedDayBackgroundColor: "#CCCCFF",
-                                    selectedDayTextColor: "#000000",
-                                    monthTextColor: "#4B4697",
-                                    textDayFontFamily: "monospace",
-                                    textMonthFontFamily: "Zain-Regular",
-                                    textDayHeaderFontFamily: "Zain-Regular",
-                                    textDayFontSize: 14,
-                                    textMonthFontSize: 20,
-                                    textDayHeaderFontSize: 14
-                                }}
-                            />
-                        ) : (
-                            <Text style={styles.selectedDate}>{dayjs(selectedDate).format("DD MMMM YYYY")}</Text>
-                        )}
-                        <TouchableOpacity style={{ alignItems: "center" }} onPress={changeShowCalendar}>
-                            <AntDesign name="minus" size={40} color={"#4B4697"} />
-                        </TouchableOpacity>
+                {loading ? (
+                    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                        <ActivityIndicator size={"large"} color={theme.tabText} />
                     </View>
+                ) : (
+                    <ScrollView
+                        contentContainerStyle={styles.scrollViewContent}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <View style={styles.containerCalendar}>
+                            {showCalendar ? (
+                                <Calendar
+                                    key={calendarKey}
+                                    firstDay={1}
+                                    markedDates={{
+                                        ...markedDates.current,
+                                        [selectedDate]: {
+                                            ...markedDates.current[selectedDate],
+                                            selected: true
+                                        }
+                                    }}
+                                    markingType="multi-dot"
+                                    onDayPress={(day) => dayPress(day.dateString)}
+                                    onMonthChange={(month) => onMonthChange(month)}
+                                    hideExtraDays={true}
+                                    theme={{
+                                        calendarBackground: theme.container,
+                                        todayBackgroundColor: "#4B4697",
+                                        todayTextColor: "#FFFFFF",
+                                        textSectionTitleColor: "#B6C1CD",
+                                        arrowColor: theme.tabText,
+                                        selectedDayBackgroundColor: "#847FC7",
+                                        monthTextColor: theme.tabText,
+                                        dayTextColor: theme.text,
+                                        textDayFontFamily: "monospace",
+                                        textMonthFontFamily: "Zain-Regular",
+                                        textDayHeaderFontFamily: "Zain-Regular",
+                                        textDayFontSize: 14,
+                                        textMonthFontSize: 20,
+                                        textDayHeaderFontSize: 14
+                                    }}
+                                />
+                            ) : (
+                                <Text style={styles.selectedDate}>{dayjs(selectedDate).format("DD MMMM YYYY")}</Text>
+                            )}
+                            <TouchableOpacity style={{ alignItems: "center" }} onPress={changeShowCalendar}>
+                                <AntDesign name="minus" size={40} color={theme.name === "light" ? "#4B4697" : "#FFFfff"} />
+                            </TouchableOpacity>
+                        </View>
 
-                    {/* flatlist showing tasks without date and selected date tasks */}
-                    <View style={styles.tasksContainer}>
-                        {/* no due date tasks */}
-                        {/* hide or show no due date tasks */}
-                        <TouchableOpacity onPress={changeShowDue} style={styles.touchShowComplete}>
-                            <Text style={styles.sectionTitle}>Tasks without date {undatedTasks.length > 0 && `   ${undatedTasks.length}`}</Text>
-                            <AntDesign style={{ right: 10 }} name={showNoDueDate ? "up" : "down"} size={22} color="#404040" />
-                        </TouchableOpacity>
+                        {/* flatlist showing tasks without date and selected date tasks */}
+                        <View style={styles.tasksContainer}>
+                            {/* no due date tasks */}
+                            {/* hide or show no due date tasks */}
+                            <TouchableOpacity onPress={changeShowDue} style={styles.touchShowComplete}>
+                                <Text style={styles.sectionTitle}>Tasks without date {undatedTasks.length > 0 && `   ${undatedTasks.length}`}</Text>
+                                <AntDesign style={{ right: 10 }} name={showNoDueDate ? "up" : "down"} size={22} color={theme.name === "light" ? "#404040" : "#FFFFFF"} />
+                            </TouchableOpacity>
 
-                        {showNoDueDate && (
+                            {showNoDueDate && (
+                                <FlatList
+                                    style={styles.flatlist}
+                                    data={undatedTasks}
+                                    keyExtractor={item => `${item.name}-${item.date}`}
+                                    renderItem={({ item }) => (
+                                        <TaskItem item={item} navigation={navigation} colour={listColours[item.list]} />
+                                    )}
+                                    scrollEnabled={false}
+                                    ListEmptyComponent={
+                                        <Image
+                                            source={require("../../../assets/images/empty.png")}
+                                            style={[styles.img, { width: 250, height: 200 }]} />
+                                    }
+                                />
+                            )}
+
+                            {/* need this view??? */}
+                            <View style={[styles.touchShowComplete, { right: 10 }]}>
+                                <Text style={styles.sectionTitle}>Tasks for {dayjs(selectedDate).format("dddd MMM YYYY")}</Text>
+                            </View>
+
                             <FlatList
                                 style={styles.flatlist}
-                                data={undatedTasks}
+                                data={selectedDateTasks}
                                 keyExtractor={item => `${item.name}-${item.date}`}
                                 renderItem={({ item }) => (
                                     <TaskItem item={item} navigation={navigation} colour={listColours[item.list]} />
                                 )}
-                                scrollEnabled={false}
                                 ListEmptyComponent={
                                     <Image
-                                        source={require("../../../assets/images/empty.jpg")}
-                                        style={[styles.img, { width: 250, height: 200 }]} />
+                                        source={require("../../../assets/images/tasksCompleted.png")} // cambiar a vacio imagen
+                                        style={styles.img} />
                                 }
+                                scrollEnabled={false}
                             />
-                        )}
-
-                        {/* need this view??? */}
-                        <View style={[styles.touchShowComplete, { right: 10 }]}>
-                            <Text style={styles.sectionTitle}>Tasks for {dayjs(selectedDate).format("dddd MMM YYYY")}</Text>
                         </View>
-
-                        <FlatList
-                            style={styles.flatlist}
-                            data={selectedDateTasks}
-                            keyExtractor={item => `${item.name}-${item.date}`}
-                            renderItem={({ item }) => (
-                                <TaskItem item={item} navigation={navigation} colour={listColours[item.list]} />
-                            )}
-                            ListEmptyComponent={
-                                <Image
-                                    source={require("../../../assets/images/tasksCompleted.png")} // cambiar a vacio imagen
-                                    style={styles.img} />
-                            }
-                            scrollEnabled={false}
-                        />
-                    </View>
-                </ScrollView>
+                    </ScrollView>
+                )}
             </LinearGradient>
-        </View>
+        </SafeAreaView>
     );
 };
 
 
-const styles = StyleSheet.create({
+const useStyles = (theme) => StyleSheet.create({
     container: {
         flex: 1
     },
@@ -260,7 +289,7 @@ const styles = StyleSheet.create({
     },
     containerCalendar: {
         width: "100%",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: theme.container,
         alignSelf: "center",
         borderRadius: 20,
         marginTop: 10,
@@ -276,7 +305,7 @@ const styles = StyleSheet.create({
     tasksContainer: {
         marginTop: 20,
         padding: 10,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: theme.container,
         borderRadius: 15,
         alignItems: "center",
         justifyContent: "center",
@@ -286,7 +315,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 22,
         fontFamily: "Zain-Regular",
-        color: "#4B6976",
+        color: theme.tabText,
         marginVertical: 10,
         paddingHorizontal: 10,
         width: "100%"
@@ -310,25 +339,7 @@ const styles = StyleSheet.create({
         fontFamily: "monospace",
         fontSize: 18,
         marginTop: 10,
-        color: "#4B4697"
-    },
-    coloursContainer: {
-        width: "90%",
-        flexDirection: "row",
-        marginTop: 10,
-        justifyContent: "space-evenly",
-        flexWrap: "wrap",
-    },
-    insideColours: {
-        alignItems: "center",
-        padding: 5,
-        borderRadius: 20,
-        width: 130
-    },
-    listName: {
-        textAlign: "center",
-        fontFamily: "Zain-Regular",
-        fontSize: 16
+        color: theme.tabText
     }
 });
 

@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import SegmentedControlTab from "react-native-segmented-control-tab";
 import dayjs from 'dayjs';
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import isoWeek from "dayjs/plugin/isoWeek";
 import { PieChart } from 'react-native-chart-kit';
+import { ThemeContext } from '../../contexts/ThemeContext';
 
 dayjs.extend(customParseFormat);
 dayjs.extend(isoWeek);
@@ -45,6 +46,9 @@ const EmotionsTabs = ({ allEmotions, selectedDate, currentMonth }) => {
     const [filteredDayData, setFilteredDayData] = useState([]);
     const [filteredWeekData, setFilteredWeekData] = useState({});
     const [allEmotionsPrev, setAllEmotionsPrev] = useState({});
+    const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
+
     // get range of week for week view
     const getWeek = (date) => {
         const startWeek = dayjs(date).startOf("isoWeek").format("YYYY-MM-DD");
@@ -97,16 +101,16 @@ const EmotionsTabs = ({ allEmotions, selectedDate, currentMonth }) => {
                 selectedIndex={selectedIndex}
                 onTabPress={setSelectedIndex}
                 firstTabStyle={{
-                    borderTopLeftRadius: 15,
+                    borderTopLeftRadius: 10,
                     borderBottomLeftRadius: 0
                 }}
                 lastTabStyle={{
-                    borderTopRightRadius: 15,
+                    borderTopRightRadius: 10,
                     borderBottomRightRadius: 0
                 }}
-                tabStyle={styles.tab}
-                activeTabStyle={styles.activeTab}
-                tabTextStyle={styles.tabText}
+                tabStyle={[styles.tab, { backgroundColor: theme.name === "light" ? "#FFFFFF" : "#808080" }]}
+                activeTabStyle={{ backgroundColor: theme.name === "light" ? "#0F0A51" : "#000000" }}
+                tabTextStyle={[styles.tabText, { color: theme.name === "light" ? "#4B4697" : "#FFFFFF" }]}
                 activeTabTextStyle={styles.activeTabText}
             />
             {selectedIndex === 0 && <DayView allEmotions={filteredDayData} />}
@@ -117,6 +121,8 @@ const EmotionsTabs = ({ allEmotions, selectedDate, currentMonth }) => {
 };
 
 const EmotionItem = React.memo(({ item, isLast }) => {
+    const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
     return (
         <View style={isLast ? [styles.emotionData, { borderBottomWidth: 0 }] : styles.emotionData}>
             <View style={styles.timeEmoji}>
@@ -129,6 +135,8 @@ const EmotionItem = React.memo(({ item, isLast }) => {
 });
 
 const DayView = ({ allEmotions }) => {
+    const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
     // to improve performance, do not change data on re-renders unless dep. changed
     const renderEmotionItem = useCallback(({ item, index }) => (
         <EmotionItem
@@ -143,7 +151,7 @@ const DayView = ({ allEmotions }) => {
                 <FlatList
                     style={{ width: "100%", height: "100%", margin: 10, paddingHorizontal: 30, paddingVertical: 5 }}
                     data={allEmotions}
-                    keyExtractor={(item, index) => item.time}
+                    keyExtractor={(item) => item.time}
                     renderItem={renderEmotionItem}
                     showsVerticalScrollIndicator={false}
                     initialNumToRender={3}
@@ -168,6 +176,8 @@ const countEmotions = (dataEmotions) => {
 };
 
 const WeekView = ({ allEmotions }) => {
+    const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
     const countedEmotions = countEmotions(allEmotions);
 
     return (
@@ -192,6 +202,8 @@ const WeekView = ({ allEmotions }) => {
 };
 
 const MonthView = ({ allEmotionsCount }) => {
+    const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
     const totalSum = Object.values(allEmotionsCount).reduce((sum, count) => sum + count, 0);
 
     return (
@@ -215,7 +227,7 @@ const MonthView = ({ allEmotionsCount }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const useStyles = (theme) => StyleSheet.create({
     container: {
         flex: 1,
         width: "100%",
@@ -223,7 +235,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     dataContainer: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: theme.container,
         borderBottomLeftRadius: 15,
         borderBottomRightRadius: 15,
         alignItems: "center",
@@ -239,9 +251,6 @@ const styles = StyleSheet.create({
     tab: {
         borderColor: "transparent"
     },
-    activeTab: {
-        backgroundColor: "#4B4697"
-    },
     tabText: {
         color: "#4B4697",
         fontSize: 16,
@@ -253,7 +262,7 @@ const styles = StyleSheet.create({
     text: {
         fontFamily: "Zain-Regular",
         fontSize: 20,
-        color: "#4B4697"
+        color: theme.tabText
     },
     emotionData: {
         padding: 10,
@@ -269,12 +278,13 @@ const styles = StyleSheet.create({
     time: {
         fontFamily: "monospace",
         fontSize: 14,
-        color: "#4B4697"
+        color: theme.tabText
     },
     emoji: {
         fontSize: 20
     },
     note: {
+        color: theme.text,
         fontFamily: "Zain-Regular",
         fontSize: 17
     },
@@ -283,7 +293,7 @@ const styles = StyleSheet.create({
         justifyContent: "center"
     },
     dateText: {
-        color: "#0F0A51",
+        color: theme.textDate,
         fontSize: 18,
         fontFamily: "Zain-Regular",
         marginHorizontal: 20,

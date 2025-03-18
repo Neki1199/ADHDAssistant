@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { setCompleted, setNotCompleted } from './TasksDB';
 import ModalNewTask from './NewTask/ModalNewTask';
@@ -6,6 +6,7 @@ import BouncyCheckbox from "react-native-bouncy-checkbox";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import dayjs from 'dayjs';
 import relativeTime from "dayjs/plugin/relativeTime";
+import { ThemeContext } from '../../contexts/ThemeContext';
 
 dayjs.extend(relativeTime); // to use fromNow()
 
@@ -13,6 +14,8 @@ const TaskItem = ({ item, navigation, colour = null }) => {
     const [checked, setChecked] = useState(item.completed);
     const [modalVisible, setModalVisible] = useState(false);
     const currentDay = dayjs().format("YYYY-MM-DD");
+    const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
 
     const changeChecked = async () => {
         if (!checked) {
@@ -51,22 +54,27 @@ const TaskItem = ({ item, navigation, colour = null }) => {
 
     return (
         <View style={[styles.taskItem, checked && styles.taskCompleted,
-        { backgroundColor: colour ? `${colour}60` : "#E4E3F6" }
+        { backgroundColor: colour ? (theme.name === "light" ? `${colour}60` : `${colour}90`) : "#E4E3F6" }
         ]}>
             <TouchableOpacity onLongPress={() => openChangeDelete()}>
                 <View style={styles.taskItemLeft}>
                     {colour && (
                         <Text style={[styles.taskItemTime, { marginBottom: 5 }]}>{item.list}</Text>
                     )}
-                    <Text style={styles.taskItemText}>{item.name}</Text>
+                    <Text style={[styles.taskItemText, { color: colour && theme.text }]}>{item.name}</Text>
                     <Text style={styles.taskItemTime}>
                         <Text style={[
                             styles.taskItemTime,
-                            {
-                                color: item.completed ? "#626262" :
-                                    item.completed === false && item.date < currentDay ? "#A21D1D" :
-                                        item.completed === false && datePastCurrentUpcoming() === dayjs(item.date).format("ddd DD MMMM") ?
-                                            "#3F85FF" : "#4B4697"
+                            { // colours of date
+                                color: item.completed ? theme.listText : ( // task completed
+                                    item.completed === false && item.date < currentDay ? (
+                                        colour ? (theme.name === "light" ? "#A21D1D" : "#E0E0E0") : "#A21D1D"
+                                    ) : (
+                                        item.completed === false && datePastCurrentUpcoming() === dayjs(item.date).format("ddd DD MMMM") ? (
+                                            colour ? (theme.name === "light" ? "#3F85FF" : "#E0E0E0") : "#3F85FF"
+                                        ) : colour ? (theme.name === "light" ? "#4B4697" : "#E0E0E0") : "#4B4697"
+                                    )
+                                )
                             }
                         ]}>{item.completed === false ? datePastCurrentUpcoming() + " " : dayjs(item.date).format("ddd DD MMMM") + " "}</Text>
                         {item.time !== "" ?
@@ -90,7 +98,7 @@ const TaskItem = ({ item, navigation, colour = null }) => {
                             disabled={checked}
                             style={{ opacity: checked ? 0.5 : 1 }}
                         >
-                            <AntDesign name="play" size={30} color="#4B4697" />
+                            <AntDesign name="play" size={30} color={theme.name === "light" ? "#4B4697" : (colour ? "#FFFFFF" : "#4B4697")} />
                         </TouchableOpacity>
                     </View>
                 )}
@@ -115,7 +123,7 @@ const TaskItem = ({ item, navigation, colour = null }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const useStyles = (theme) => StyleSheet.create({
     taskItem: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -135,6 +143,7 @@ const styles = StyleSheet.create({
         gap: 10
     },
     taskItemText: {
+        color: "#000000",
         fontFamily: "Zain-Regular",
         fontSize: 18,
         flexWrap: "wrap",
@@ -146,9 +155,9 @@ const styles = StyleSheet.create({
         alignItems: "center"
     },
     taskItemTime: {
+        color: theme.listText,
         fontFamily: "monospace",
         fontSize: 12,
-        color: "#626262"
     },
     checkbox: {
         margin: 8,

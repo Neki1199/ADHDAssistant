@@ -1,10 +1,14 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Modal, TouchableOpacity, StyleSheet, Text, FlatList, View } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+import { ThemeContext } from "../../contexts/ThemeContext";
 
+// modal "start a task randomly"
 export const ModalStart = ({ tasks, modalStart, setModalStart, navigation }) => {
     const [selectTasksModal, setSelectTasksModal] = useState(false);
     const [tasksToStart, setTasksToStart] = useState([]);
+    const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
 
     const getRandomTask = (taskList) => {
         const randomIndex = Math.floor(Math.random() * taskList.length);
@@ -62,7 +66,7 @@ export const ModalStart = ({ tasks, modalStart, setModalStart, navigation }) => 
                 <View style={styles.modalInside}>
                     <View style={styles.topModal}>
                         <TouchableOpacity onPress={() => setModalStart(false)}>
-                            <AntDesign name="close" size={30} color={"#4B4697"} />
+                            <AntDesign name="close" size={30} color={theme.tabText} />
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}>
                             Start A Task Randomly
@@ -70,7 +74,7 @@ export const ModalStart = ({ tasks, modalStart, setModalStart, navigation }) => 
                     </View>
                     <Text style={styles.bottomTitleText}>Once selected an option, do that task!</Text>
                     <Text style={styles.bottomTitleText}>If you don't want to do the random task selected...</Text>
-                    <Text style={[styles.bottomTitleText, { marginBottom: 30 }]}>Do you <Text style={{ color: "#000000" }}>really</Text> want to come here again?</Text>
+                    <Text style={[styles.bottomTitleText, { marginBottom: 30 }]}>Do you <Text style={{ color: theme.text }}>really</Text> want to come here again?</Text>
 
                     <TouchableOpacity
                         style={[styles.button,
@@ -98,7 +102,7 @@ export const ModalStart = ({ tasks, modalStart, setModalStart, navigation }) => 
                                 setTasksToStart([]);
                                 setSelectTasksModal(false);
                             }}>
-                                <AntDesign name="close" size={30} color={"#4B4697"} />
+                                <AntDesign name="close" size={30} color={theme.tabText} />
                             </TouchableOpacity>
                             <Text style={styles.modalTitle}>Select Tasks</Text>
                             <TouchableOpacity
@@ -109,7 +113,7 @@ export const ModalStart = ({ tasks, modalStart, setModalStart, navigation }) => 
                                     setModalStart(false);
                                     startSomeTasks();
                                 }}>
-                                <AntDesign name="checkcircle" size={30} color={"#4B4697"} />
+                                <AntDesign name="checkcircle" size={30} color={theme.tabText} />
                             </TouchableOpacity>
                         </View>
 
@@ -138,7 +142,7 @@ export const ModalStart = ({ tasks, modalStart, setModalStart, navigation }) => 
 };
 
 
-const styles = StyleSheet.create({
+const useStyles = (theme) => StyleSheet.create({
     modalContainer: {
         flex: 1,
         justifyContent: "center",
@@ -149,7 +153,7 @@ const styles = StyleSheet.create({
         width: "100%",
         height: "70%",
         padding: 20,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: theme.container,
         borderRadius: 15,
         alignItems: "center"
     },
@@ -157,7 +161,7 @@ const styles = StyleSheet.create({
         fontFamily: "Zain-Regular",
         fontSize: 25,
         marginBottom: 5,
-        color: "#4B4697",
+        color: theme.tabText,
         flex: 1,
         textAlign: "center"
     },
@@ -175,7 +179,7 @@ const styles = StyleSheet.create({
         padding: 10
     },
     button: {
-        backgroundColor: "#4B4697",
+        backgroundColor: theme.primary,
         padding: 14,
         width: "80%",
         borderRadius: 10,

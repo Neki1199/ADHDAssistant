@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Alert } from 'react-native';
 import { doc, updateDoc, getDoc, setDoc, arrayUnion } from '@firebase/firestore';
 import { db, auth } from "../../../firebaseConfig";
 import dayjs from "dayjs";
+import { ThemeContext } from '../../contexts/ThemeContext';
 
-export default function EmotionsHome({ navigation }) { // home emotions emoji
+export default function EmotionsHome() { // home emotions emoji
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [note, setNote] = useState("");
   const [visibleModal, setVisibleModal] = useState(false);
+  const { theme } = useContext(ThemeContext);
+  const styles = useStyles(theme);
 
   const allEmotions = [
     { emoji: "🟢", name: "green" },
@@ -76,12 +79,14 @@ export default function EmotionsHome({ navigation }) { // home emotions emoji
               placeholder="Add and optional note"
               value={note}
               onChangeText={setNote}
+              placeholderTextColor={theme.text}
+              autoFocus={true}
             />
             <View style={styles.buttonsModal}>
-              <TouchableOpacity style={[styles.buttons, { backgroundColor: "#B90000" }]} onPress={() => { setVisibleModal(false), setNote("") }}>
+              <TouchableOpacity style={[styles.buttons, { backgroundColor: theme.name === "light" ? "#B90000" : "#56546F" }]} onPress={() => { setVisibleModal(false), setNote("") }}>
                 <Text style={styles.btnText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.buttons, { backgroundColor: "#4B4697" }]} onPress={() => storeEmotion(selectedEmotion)}>
+              <TouchableOpacity style={[styles.buttons, { backgroundColor: theme.name === "light" ? "#4B4697" : "#2A2572" }]} onPress={() => storeEmotion(selectedEmotion)}>
                 <Text style={styles.btnText}>Done</Text>
               </TouchableOpacity>
             </View>
@@ -92,9 +97,9 @@ export default function EmotionsHome({ navigation }) { // home emotions emoji
   )
 };
 
-const styles = StyleSheet.create({
+const useStyles = (theme) => StyleSheet.create({
   emotionsView: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.container,
     width: "90%",
     height: "18%",
     borderRadius: 10,
@@ -102,6 +107,7 @@ const styles = StyleSheet.create({
     padding: 10
   },
   textEmotions: {
+    color: theme.tabText,
     fontFamily: "Zain-Regular",
     fontSize: 25
   },
@@ -114,7 +120,7 @@ const styles = StyleSheet.create({
   modalInside: {
     width: '90%',
     padding: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.container,
     borderRadius: 10,
     alignItems: 'center'
   },
@@ -122,17 +128,18 @@ const styles = StyleSheet.create({
     fontFamily: "Zain-Regular",
     fontSize: 25,
     marginBottom: 10,
-    color: '#4B4697'
+    color: theme.tabText
   },
   noteInput: {
     width: "100%",
     height: 50,
     fontFamily: "Zain-Regular",
     fontSize: 20,
-    backgroundColor: "#F0F0F0",
+    backgroundColor: theme.input,
     borderRadius: 10,
     marginBottom: 10,
     padding: 10,
+    color: theme.text
   },
   buttonsModal: {
     flexDirection: "row",

@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Alert, KeyboardAvoidingView, Image, Platform, View, StyleSheet, Text, TouchableOpacity, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AntDesign from "react-native-vector-icons/AntDesign";
 import { CountdownCircleTimer } from "react-native-countdown-circle-timer"
 import { setCompleted } from "./TasksDB";
+import { ThemeContext } from '../../contexts/ThemeContext';
 
 // TASK TIMER SCREEN
 const TaskTimer = ({ route, navigation }) => {
     const { task } = route.params;
+    const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
     const [hFormat, mFormat] = task.duration?.split(":");
     const [durationH, setDurationH] = useState(hFormat);
     const [durationM, setDurationM] = useState(mFormat);
@@ -26,6 +29,18 @@ const TaskTimer = ({ route, navigation }) => {
 
     const [taskCompleted, setTaskCompleted] = useState(false);
     const [initialSetup, setInitialSetup] = useState(true);
+
+    useEffect(() => {
+        navigation.setOptions({
+            headerStyle: {
+                borderBottomWidth: 0,
+                elevation: 0,
+                shadowOpacity: 0,
+                backgroundColor: theme.header
+            },
+        });
+    }, [theme, navigation])
+
 
     const formatHours = () => {
         // to be 00:00
@@ -132,11 +147,11 @@ const TaskTimer = ({ route, navigation }) => {
             <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                 <View style={styles.container}>
                     <LinearGradient
-                        colors={["#7D79C0", "#EBEAF6"]}
+                        colors={[theme.header, theme.linear2]}
                         style={styles.gradient}>
 
                         <View style={[styles.containerInside, {
-                            backgroundColor: initialSetup ? "#FFFFFF" : "transparent"
+                            backgroundColor: initialSetup ? theme.container : "transparent"
                         }]}>
 
                             {/* only appear at the begining, or if user wants to reset the counter */}
@@ -152,6 +167,7 @@ const TaskTimer = ({ route, navigation }) => {
                                             maxLength={2}
                                             value={durationH}
                                             onChangeText={(value) => handleInputChange(value, "hh")}
+                                            placeholderTextColor={theme.text}
                                         />
                                         <Text style={{ alignSelf: "center", fontWeight: "bold", fontSize: 20 }}>:</Text>
                                         <TextInput
@@ -161,6 +177,7 @@ const TaskTimer = ({ route, navigation }) => {
                                             maxLength={2}
                                             value={durationM}
                                             onChangeText={(value) => handleInputChange(value, "mm")}
+                                            placeholderTextColor={theme.text}
                                         />
                                     </View>
                                     <Text style={styles.taskText}>
@@ -177,6 +194,7 @@ const TaskTimer = ({ route, navigation }) => {
                                                 value={taskBreak}
                                                 keyboardType='numeric'
                                                 onChangeText={setTaskBreak}
+                                                placeholderTextColor={theme.text}
                                             />
                                         </View>
                                         {/* if break time is set, let user set repeats */}
@@ -282,7 +300,7 @@ const TaskTimer = ({ route, navigation }) => {
                                             )
                                         }}
                                     </CountdownCircleTimer>
-                                    <Text style={[styles.title, , { padding: 20, color: "#000000" }]}>
+                                    <Text style={[styles.title, , { padding: 20, color: theme.text }]}>
                                         {taskBreak === "" ? "" :
                                             (breakCounter === 0 ? "Final stretch!" :
                                                 (breakCounter > 1 ? `${breakCounter} breaks left` : `${breakCounter} break left`))}
@@ -296,7 +314,7 @@ const TaskTimer = ({ route, navigation }) => {
                                     <Text style={[styles.title, { fontSize: 30, padding: 10 }]}>Break Time</Text>
                                     <Image
                                         source={require("../../../assets/images/break.png")}
-                                        style={[styles.img, { position: "absolute", width: 650, height: 650, bottom: -185, left: -130 }]} />
+                                        style={[styles.img, { position: "absolute", width: 850, height: 850, bottom: -160, left: -235 }]} />
                                     <CountdownCircleTimer
                                         isPlaying={startBreak}
                                         duration={parseInt(taskBreak, 10) * 60}
@@ -321,11 +339,11 @@ const TaskTimer = ({ route, navigation }) => {
                                             const ss = (remainingTime % 60).toString().padStart(2, "0");
 
                                             return (
-                                                <Text style={styles.timeCountdown}>{`${mm}:${ss}`}</Text>
+                                                <Text style={[styles.timeCountdown, { color: theme.textTime }]}>{`${mm}:${ss}`}</Text>
                                             )
                                         }}
                                     </CountdownCircleTimer>
-                                    <Text style={[styles.title, , { padding: 20, color: "#000000" }]}>
+                                    <Text style={[styles.title, , { padding: 20, color: theme.textBreak }]}>
                                         {breakCounter === 0 ? "" : breakCounter > 1 ? `${breakCounter} breaks left` : `${breakCounter} break left`}
                                     </Text>
                                 </>
@@ -334,12 +352,12 @@ const TaskTimer = ({ route, navigation }) => {
                             {/* start button on initial setup */}
                             {initialSetup && (
                                 <View style={styles.startBottom}>
-                                    <Text style={[styles.taskText, { fontSize: 26, color: "#4B4697" }]}>When you are ready press the button</Text>
+                                    <Text style={[styles.taskText, { fontSize: 26, color: theme.tabText }]}>When you are ready press the button</Text>
                                     <Text style={[styles.taskText, { fontSize: 20, color: "#404040" }]}>A five second counter will start!</Text>
                                     <TouchableOpacity onPress={() =>
                                         setDurationBreak()
                                     }>
-                                        <AntDesign name="play" size={50} color={"#4B4697"} />
+                                        <AntDesign name="play" size={50} color={theme.tabText} />
                                     </TouchableOpacity>
                                 </View>
                             )}
@@ -354,20 +372,21 @@ const TaskTimer = ({ route, navigation }) => {
                                             <TouchableOpacity onPress={() => setStartCounterTask(false)}
                                                 style={{ opacity: breakCounterVisible ? 0.5 : 1 }}
                                                 disabled={breakCounterVisible}>
-                                                <AntDesign name="pausecircle" size={50} color={"#7A74C9"} />
+                                                <AntDesign name="pausecircle" size={45} color={startBreak ? (theme.name === "light" ? "#7A74C9" : "#DDDBFF") : "#7A74C9"} />
                                             </TouchableOpacity>
                                         ) : (
                                             // start
                                             <TouchableOpacity onPress={() => setStartCounterTask(true)}>
-                                                <AntDesign name="play" size={50} color={"#7A74C9"} />
+                                                <AntDesign name="play" size={45} color={startBreak ? (theme.name === "light" ? "#7A74C9" : "#DDDBFF") : "#7A74C9"} />
                                             </TouchableOpacity>
                                         )}
                                         {/* restart */}
                                         <TouchableOpacity onPress={restartTimer}>
-                                            <AntDesign name="reload1" size={50} color={"#7A74C9"} />
+                                            <AntDesign name="reload1" size={45} color={startBreak ? (theme.name === "light" ? "#7A74C9" : "#DDDBFF") : "#7A74C9"} />
                                         </TouchableOpacity>
                                     </View>
-                                    {/* completed */}
+
+                                    {/* completed btn*/}
                                     <TouchableOpacity style={styles.btn} onPress={async () => {
                                         try {
                                             // change task
@@ -393,10 +412,10 @@ const TaskTimer = ({ route, navigation }) => {
                                         style={styles.img} />
                                     <Text style={styles.title}>Have you finished your task?</Text>
                                     <View style={styles.btnCompletedContainer}>
-                                        <TouchableOpacity style={[styles.btn, { width: 300, backgroundColor: "#211B75" }]} onPress={restartTimer}>
+                                        <TouchableOpacity style={[styles.btn, { width: 300, backgroundColor: theme.name === "light" ? "#211B75" : "#221D66" }]} onPress={restartTimer}>
                                             <Text style={styles.btnText}>No, let me restart and change the timer</Text>
                                         </TouchableOpacity>
-                                        <TouchableOpacity style={[styles.btn, { width: 300, backgroundColor: "#3E5CB0" }]} onPress={() => {
+                                        <TouchableOpacity style={[styles.btn, { width: 300, backgroundColor: theme.name === "light" ? "#3E5CB0" : "#4B4697" }]} onPress={() => {
                                             navigation.navigate("Tasks", { lisID: "Daily" })
                                             setCompleted(task);
                                         }}>
@@ -414,7 +433,7 @@ const TaskTimer = ({ route, navigation }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const useStyles = (theme) => StyleSheet.create({
     container: {
         flex: 1,
     },
@@ -427,7 +446,7 @@ const styles = StyleSheet.create({
         textAlign: "center",
         fontFamily: "Zain-Regular",
         fontSize: 24,
-        color: "#1D1869",
+        color: theme.title,
     },
     containerInside: {
         marginVertical: 10,
@@ -446,7 +465,7 @@ const styles = StyleSheet.create({
         fontFamily: "Zain-Regular",
         fontSize: 18,
         textAlign: "center",
-        color: "#606060",
+        color: theme.textTimer,
         top: 10
     },
     btnText: {
@@ -487,7 +506,7 @@ const styles = StyleSheet.create({
     },
     timeCountdown: {
         fontSize: 44,
-        color: "#4B4697",
+        color: theme.tabText,
         fontFamily: "monospace"
     },
     input: {
@@ -495,10 +514,11 @@ const styles = StyleSheet.create({
         textAlign: "center",
         fontSize: 20,
         width: 80,
-        backgroundColor: "#F0F0F0",
+        backgroundColor: theme.input,
         borderRadius: 20,
         padding: 15,
-        marginTop: 20
+        marginTop: 20,
+        color: theme.text
     },
     timerCointainer: {
         alignItems: "center",

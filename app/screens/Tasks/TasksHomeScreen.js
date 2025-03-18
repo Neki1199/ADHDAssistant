@@ -3,9 +3,12 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native
 import { getProgress } from "./TasksDB"
 import { CircularProgress } from 'react-native-circular-progress';
 import { ListsContext } from "../../contexts/ListsContext";
+import { ThemeContext } from '../../contexts/ThemeContext';
 
 const TasksItemHome = ({ listID, navigation }) => {
   const [progress, setProgress] = useState(0);
+  const { theme } = useContext(ThemeContext);
+  const styles = useStyles(theme);
 
   // onsanpshot to get updates from lists and tasks
   useEffect(() => {
@@ -20,10 +23,12 @@ const TasksItemHome = ({ listID, navigation }) => {
           size={50}
           width={4}
           fill={progress}
-          tintColor='#4B4697'
+          tintColor={theme.name === "light" ? '#4B4697' : "#1C1C1C"}
           backgroundColor='#DBDADA'
         >
-          {(fill) => <Text style={{ fontSize: 16, fontFamily: "Zain-Regular" }}>{`${fill.toFixed(0)}%`}</Text>}
+          {(fill) => <Text style={{ fontSize: 16, fontFamily: "Zain-Regular", color: theme.name === "light" ? "#000000" : "#FFFFFF" }}>
+            {`${fill.toFixed(0)}%`}
+          </Text>}
         </CircularProgress>
         <Text style={styles.textList}>{listID}</Text>
       </TouchableOpacity>
@@ -33,6 +38,8 @@ const TasksItemHome = ({ listID, navigation }) => {
 
 export default function TasksHome({ navigation }) {
   const { allLists } = useContext(ListsContext);
+  const { theme } = useContext(ThemeContext);
+  const styles = useStyles(theme);
 
   return (
     <View style={styles.tasksView}>
@@ -58,9 +65,9 @@ export default function TasksHome({ navigation }) {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = (theme) => StyleSheet.create({
   tasksView: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.container,
     width: "90%",
     height: "18%",
     borderRadius: 10,
@@ -71,7 +78,7 @@ const styles = StyleSheet.create({
   textTasks: {
     fontFamily: "Zain-Regular",
     fontSize: 25,
-    color: "#4B4697"
+    color: theme.tabText
   },
   listItem: {
     alignItems: "center",
@@ -79,6 +86,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 9
   },
   textList: {
+    color: theme.text,
     fontFamily: "monospace",
     fontSize: 12,
     fontWeight: "bold",
