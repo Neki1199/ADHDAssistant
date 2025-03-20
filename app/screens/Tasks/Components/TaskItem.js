@@ -1,12 +1,12 @@
 import React, { useContext, useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { setCompleted, setNotCompleted } from './TasksDB';
-import ModalNewTask from './NewTask/ModalNewTask';
+import { setCompleted, setNotCompleted } from '../TasksDB';
+import ModalNewTask from "../Modals/ModalNewTask";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import dayjs from 'dayjs';
 import relativeTime from "dayjs/plugin/relativeTime";
-import { ThemeContext } from '../../contexts/ThemeContext';
+import { ThemeContext } from '../../../contexts/ThemeContext';
 
 dayjs.extend(relativeTime); // to use fromNow()
 
@@ -37,6 +37,9 @@ const TaskItem = ({ item, navigation, colour = null }) => {
         if (item.date === currentDay) {
             return "Today";
         }
+        if (item.date === "") {
+            return "No date"
+        }
         if (item.date < currentDay) {
             const isYesterday = dayjs(item.date).isSame(dayjs().subtract(1, "day"), "day");
             if (isYesterday) {
@@ -54,32 +57,29 @@ const TaskItem = ({ item, navigation, colour = null }) => {
 
     return (
         <View style={[styles.taskItem, checked && styles.taskCompleted,
-        { backgroundColor: colour ? (theme.name === "light" ? `${colour}60` : `${colour}90`) : "#E4E3F6" }
-        ]}>
+        {
+            borderLeftWidth: colour && 6, borderColor: colour && `${colour}90`,
+        }]}>
             <TouchableOpacity onLongPress={() => openChangeDelete()}>
                 <View style={styles.taskItemLeft}>
                     {colour && (
                         <Text style={[styles.taskItemTime, { marginBottom: 5 }]}>{item.list}</Text>
                     )}
-                    <Text style={[styles.taskItemText, { color: colour && theme.text }]}>{item.name}</Text>
+                    <Text style={styles.taskItemText}>{item.name}</Text>
                     <Text style={styles.taskItemTime}>
                         <Text style={[
                             styles.taskItemTime,
                             { // colours of date
-                                color: item.completed ? theme.listText : ( // task completed
-                                    item.completed === false && item.date < currentDay ? (
-                                        colour ? (theme.name === "light" ? "#A21D1D" : "#E0E0E0") : "#A21D1D"
-                                    ) : (
-                                        item.completed === false && datePastCurrentUpcoming() === dayjs(item.date).format("ddd DD MMMM") ? (
-                                            colour ? (theme.name === "light" ? "#3F85FF" : "#E0E0E0") : "#3F85FF"
-                                        ) : colour ? (theme.name === "light" ? "#4B4697" : "#E0E0E0") : "#4B4697"
-                                    )
-                                )
+                                color: item.completed ? "#626262" :  // task completed
+                                    item.completed === false && item.date < currentDay ? "#A21D1D"
+                                        : item.completed === false && datePastCurrentUpcoming() === dayjs(item.date).format("ddd DD MMMM") ?
+                                            "#3F85FF" : "#4B4697"
                             }
-                        ]}>{item.completed === false ? datePastCurrentUpcoming() + " " : dayjs(item.date).format("ddd DD MMMM") + " "}</Text>
-                        {item.time !== "" ?
+                        ]}>{item.completed === false ? datePastCurrentUpcoming() + " " :
+                            item.date !== "" ? dayjs(item.date).format("ddd DD MMMM") + " " :
+                                "No Date "}</Text>
+                        {item.time !== "" &&
                             "At " + dayjs(item.time, "HH:mm").format("HH:mm")
-                            : "All day"
                         }
                     </Text>
                 </View>
@@ -112,7 +112,6 @@ const TaskItem = ({ item, navigation, colour = null }) => {
                         onPress={() => changeChecked()}
                         innerIconStyle={{
                             backgroundColor: "rgba(255, 255, 255, 0.4)",
-
                         }}
                     />
                 </View>
@@ -130,7 +129,8 @@ const useStyles = (theme) => StyleSheet.create({
         width: "100%",
         padding: 10,
         borderRadius: 20,
-        marginBottom: 10
+        marginBottom: 10,
+        backgroundColor: "#E4E3F6"
     },
     taskItemLeft: {
         marginLeft: 10,
@@ -158,6 +158,7 @@ const useStyles = (theme) => StyleSheet.create({
         color: theme.listText,
         fontFamily: "monospace",
         fontSize: 12,
+        color: "#626262"
     },
     checkbox: {
         margin: 8,
@@ -166,7 +167,7 @@ const useStyles = (theme) => StyleSheet.create({
     },
     taskCompleted: {
         opacity: 0.5,
-        backgroundColor: "#B7E2B0"
+        backgroundColor: "#E4E3F6"
     },
     checkboxStyle: {
         borderWidth: 2,

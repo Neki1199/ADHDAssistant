@@ -2,7 +2,7 @@ import * as SystemUI from "expo-system-ui";
 import React, { useContext, useEffect } from 'react';
 import { StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import EmotionsHome from "../screens/Emotions/EmotionsScreen";
-import TasksHome from "../screens/Tasks/TasksHomeScreen"
+import TasksHome from "../screens/Tasks/Components/TasksHomeScreen"
 import { LinearGradient } from 'expo-linear-gradient';
 import { ThemeContext } from '../contexts/ThemeContext';
 

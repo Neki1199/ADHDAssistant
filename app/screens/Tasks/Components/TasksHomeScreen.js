@@ -1,9 +1,9 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { getProgress } from "./TasksDB"
+import { getProgress } from "../TasksDB"
 import { CircularProgress } from 'react-native-circular-progress';
-import { ListsContext } from "../../contexts/ListsContext";
-import { ThemeContext } from '../../contexts/ThemeContext';
+import { ListsContext } from "../../../contexts/ListsContext";
+import { ThemeContext } from '../../../contexts/ThemeContext';
 
 const TasksItemHome = ({ listID, navigation }) => {
   const [progress, setProgress] = useState(0);

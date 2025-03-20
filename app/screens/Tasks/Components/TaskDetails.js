@@ -3,7 +3,7 @@ import { View, TouchableWithoutFeedback, StyleSheet, Text, TouchableOpacity, Mod
 import { AntDesign } from "@expo/vector-icons";
 import { ThemeContext } from "../../../contexts/ThemeContext";
 
-const TaskDetails = ({ modalInputs, taskDetails, showLists, listsItems, setShowLists, resetTaskDetail, otherList, setOtherList }) => {
+const TaskDetails = ({ modalInputs, taskDetails, showLists, listsItems, setShowLists, resetTaskDetail, otherList, setOtherList, resetTime }) => {
     const { theme } = useContext(ThemeContext);
     const styles = useStyles(theme);
 
@@ -11,7 +11,7 @@ const TaskDetails = ({ modalInputs, taskDetails, showLists, listsItems, setShowL
         <View style={styles.inputsContainer}>
             {modalInputs.map((modalInput, index) => {
                 const { nameInput, icon, inputFunction, setValue } = modalInput;
-                const cancelSet = taskDetails[nameInput]?.cancel;
+                const cancelSet = nameInput === "Date/Time" ? taskDetails.Date?.cancel : taskDetails[nameInput]?.cancel;
 
                 return (
                     <View key={index} style={styles.itemInput}>
@@ -20,6 +20,7 @@ const TaskDetails = ({ modalInputs, taskDetails, showLists, listsItems, setShowL
                             <AntDesign name={icon} size={22} color={theme.text} />
                             <Text style={styles.inputText}>{nameInput}</Text>
                         </View>
+
                         {/* modal to select the list */}
                         {nameInput === "List" && showLists && (
                             <Modal visible={showLists} transparent={true} animationType="slide">
@@ -55,7 +56,13 @@ const TaskDetails = ({ modalInputs, taskDetails, showLists, listsItems, setShowL
 
                         {cancelSet ? (
                             // cancel icon at right
-                            <TouchableOpacity style={styles.iconAndName} onPress={() => resetTaskDetail(nameInput)}>
+                            <TouchableOpacity style={styles.iconAndName} onPress={() => {
+                                if (nameInput === "Date/Time") {
+                                    resetTime();
+                                } else {
+                                    resetTaskDetail(nameInput);
+                                }
+                            }}>
                                 <Text style={[styles.inputText, { color: theme.tabText }]}>{setValue}</Text>
                                 <AntDesign name="close" size={22} color={theme.tabText} />
                             </TouchableOpacity>
@@ -63,16 +70,22 @@ const TaskDetails = ({ modalInputs, taskDetails, showLists, listsItems, setShowL
                             // button right
                             <TouchableOpacity
                                 style={styles.iconAndName} onPress={inputFunction}
-                                disabled={nameInput === "List" && listsItems.length === 1}
+                                disabled={(nameInput === "List" && listsItems.length === 1) ||
+                                    (nameInput === "Reminder" && taskDetails.Date.value === "")
+                                }
                             >
                                 <Text style={[styles.inputText, {
-                                    color: nameInput === "List" &&
-                                        listsItems.length === 1 ? theme.name === "light" ? "#C0C0C0" : "#A0A0A0"
+                                    color: (nameInput === "List" &&
+                                        listsItems.length === 1) ||
+                                        (nameInput === "Reminder" && taskDetails.Date.value === "")
+                                        ? theme.name === "light" ? "#C0C0C0" : "#A0A0A0"
                                         : theme.tabText
                                 }]}>{setValue}</Text>
                                 <AntDesign name="right" size={22}
-                                    color={nameInput === "List" &&
-                                        listsItems.length === 1 ? theme.name === "light" ? "#C0C0C0" : "#A0A0A0"
+                                    color={(nameInput === "List" &&
+                                        listsItems.length === 1) ||
+                                        (nameInput === "Reminder" && taskDetails.Date.value === "")
+                                        ? theme.name === "light" ? "#C0C0C0" : "#A0A0A0"
                                         : theme.text}
                                 />
                             </TouchableOpacity>

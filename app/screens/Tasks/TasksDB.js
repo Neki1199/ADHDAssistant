@@ -18,7 +18,6 @@ export const addTask = async (name, date, time, reminder, repeat, duration, comp
         await setDoc(taskRef, {
             id: taskRef.id, name, date, time, reminder, repeat, duration, completed, list, completedDate, parentID
         });
-
         return { id: taskRef.id }; // return the id
     } catch (error) {
         console.log("Error adding task: ", error);
@@ -46,11 +45,17 @@ export const changeTask = async (task, newData) => {
     }
 };
 
-export const deleteTask = async (task) => {
+export const deleteTask = async (task, taskID = null) => {
     const userID = auth.currentUser?.uid;
     if (!userID) return;
+    let taskRef;
 
-    const taskRef = doc(db, "users", userID, "todoLists", task.list, "Tasks", task.id);
+    if (taskID === null) {
+        taskRef = doc(db, "users", userID, "todoLists", task.list, "Tasks", task.id);
+    } else {
+        taskRef = doc(db, "users", userID, "todoLists", task.list, "Tasks", taskID);
+    }
+
     try {
         await deleteDoc(taskRef);
     } catch (error) {
@@ -312,11 +317,19 @@ export const getUncompletedMonth = (listID, year, month, setTasks) => {
     const endDate = dayjs(`${year}-${month}-01`).endOf("month").format("YYYY-MM-DD");
 
     const tasksRef = collection(db, "users", userID, "todoLists", listID, "Tasks");
+
+    // with date
     const tasksQuery = query(tasksRef,
         where("completed", "==", false),
         where("date", ">=", startDate),
         where("date", "<=", endDate),
     );
+
+    // without date
+    const noDateQuery = query(tasksRef,
+        where("completed", "==", false),
+        where("date", "==", "")
+    )
 
     // get all tasks (completed, and not completed)
     const unsuscribe = onSnapshot(tasksQuery, (tasksSnapshot) => {
@@ -324,7 +337,19 @@ export const getUncompletedMonth = (listID, year, month, setTasks) => {
             id: doc.id,
             ...doc.data()
         }));
-        setTasks(tasks);
+
+        const unsuscribeNoDate = onSnapshot(noDateQuery, (tasksNoDate) => {
+            const noDateTasks = tasksNoDate.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            const allTasks = [...tasks, ...noDateTasks];
+            setTasks(allTasks);
+        });
+        return () => {
+            unsuscribe();
+            unsuscribeNoDate();
+        }
     });
     return unsuscribe;
 };
@@ -406,18 +431,22 @@ export const getProgress = (listID, setProgress) => {
     });
 };
 
-export const deleteRepeatedTasks = async (list, parentID) => {
+export const deleteRepeatedTasks = async (task) => {
     const userID = auth.currentUser?.uid;
     if (!userID) return;
+    const parentID = task.parentID ? task.parentID : task.id;
 
-    const tasksRef = collection(db, "users", userID, "todoLists", list, "Tasks");
+    const tasksRef = collection(db, "users", userID, "todoLists", task.list, "Tasks");
     const tasksQuery = query(tasksRef, where("parentID", "==", parentID));
 
     try {
         const resultTasks = await getDocs(tasksQuery);
-        resultTasks.forEach(async (task) => {
-            await deleteDoc(task.ref);
+
+        const deleteAll = resultTasks.docs.map(async (eachTask) => {
+            await deleteDoc(eachTask.ref);
         });
+
+        await Promise.all(deleteAll);
     } catch (error) {
         console.log("Could not delete parentID tasks: ", error)
     }

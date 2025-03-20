@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
 import { Modal, TouchableOpacity, StyleSheet, Text, FlatList, View } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
-import { ThemeContext } from "../../contexts/ThemeContext";
+import { ThemeContext } from "../../../contexts/ThemeContext";
 
 // modal "start a task randomly"
 export const ModalStart = ({ tasks, modalStart, setModalStart, navigation }) => {

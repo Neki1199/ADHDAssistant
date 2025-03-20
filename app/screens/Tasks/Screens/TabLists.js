@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator, FlatList, ScrollView, SafeAreaView, TouchableOpacity, Image, Modal, TouchableWithoutFeedback } from 'react-native';
-import { getTasks, deleteAllCompleted } from './TasksDB';
+import { getTasks, deleteAllCompleted } from '../TasksDB';
 import { LinearGradient } from 'expo-linear-gradient';
-import ModalNewTask from "./NewTask/ModalNewTask";
+import ModalNewTask from "../Modals/ModalNewTask";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AntDesign from "react-native-vector-icons/AntDesign";
 import dayjs from 'dayjs';
-import TaskItem from './TaskItem';
-import { ModalStart } from './ModalStart';
-import { ThemeContext } from '../../contexts/ThemeContext';
+import TaskItem from '../Components/TaskItem';
+import { ModalStart } from '../Modals/ModalStart';
+import { ThemeContext } from '../../../contexts/ThemeContext';
 
 export const sortTasks = (tasks) => {
     return tasks.sort((a, b) => {
-        // create date time, if time exists append T to create time object (ISO format)
-        const aDate = dayjs(`${a.date}${a.time ? `T${a.time}` : ""}`);
-        const bDate = dayjs(`${b.date}${b.time ? `T${b.time}` : ""}`);
+        // create date time, if time exists append T to create time object (ISO format) / handle no dates with a further date
+        const aDate = a.date ? dayjs(`${a.date}${a.time ? `T${a.time}` : ""}`) : dayjs("9999-12-31");
+        const bDate = b.date ? dayjs(`${b.date}${b.time ? `T${b.time}` : ""}`) : dayjs("9999-12-31");
 
         // if a and b are the same date
         if (aDate.isSame(bDate, "day")) {
@@ -116,6 +116,7 @@ const ListTasks = ({ route, navigation }) => {
 
     // get all tasks that are completed (for daily, only past and current tasks)
     const dailyAllTasksCompleted = filteredTasks.pastAndCurrent.every(task => task.completed);
+    const dailyBeforeEqual = filteredTasks.uncompleted.filter(task => task.date <= currentDay);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -133,8 +134,16 @@ const ListTasks = ({ route, navigation }) => {
                             <TouchableOpacity
                                 onPress={() => setModalDeleteAll(true)}
                                 disabled={filteredTasks.completed.length === 0}
+                                style={{ flexDirection: "row" }}
                             >
-                                <AntDesign style={{ right: 10 }} name="ellipsis1" size={22}
+                                {dailyBeforeEqual.length > 0 && (
+                                    <View style={styles.number}>
+                                        <Text style={{ fontSize: 12, color: theme.text }}>
+                                            {dailyBeforeEqual.length}
+                                        </Text>
+                                    </View>
+                                )}
+                                <AntDesign style={{ right: 10 }} name="ellipsis1" size={25}
                                     color={
                                         filteredTasks.completed.length > 0 ? (theme.name === "light" ? "#404040" : "#FFFFFF") : (theme.name === "light" ? "#E0E0E0" : "#606060")
                                     } />
@@ -146,7 +155,7 @@ const ListTasks = ({ route, navigation }) => {
                             // uncompleted tasks
                             <FlatList
                                 style={styles.flatlist}
-                                data={filteredTasks.uncompleted.filter(task => task.date <= currentDay)}
+                                data={dailyBeforeEqual}
                                 keyExtractor={item => `${item.id}-${item.date}`}
                                 renderItem={({ item }) => (
                                     <TaskItem item={item} navigation={navigation} />
@@ -157,12 +166,12 @@ const ListTasks = ({ route, navigation }) => {
                                     dailyAllTasksCompleted ? (
                                         // image all completed!
                                         <Image
-                                            source={require("../../../assets/images/completed.png")}
+                                            source={require("../../../../assets/images/completed.png")}
                                             style={styles.img} />
                                     ) : (
                                         // image user has not added a task yet
                                         <Image
-                                            source={require("../../../assets/images/addTask.png")}
+                                            source={require("../../../../assets/images/addTask.png")}
                                             style={styles.img} />
                                     )
                                 }
@@ -172,10 +181,19 @@ const ListTasks = ({ route, navigation }) => {
                         {listID !== "Daily" && (
                             // hide or show upcoming tasks 
                             <>
-                                <TouchableOpacity onPress={changeShowUpcoming} style={styles.touchShowComplete}>
-                                    <Text style={styles.sectionTitle}>Upcoming Tasks<Text style={{ color: theme.name === "light" ? "#4B4697" : "#E0E0E0" }}>{filteredTasks.upcoming.length > 0 && `   ${filteredTasks.upcoming.length}`}</Text></Text>
-                                    <AntDesign style={{ right: 10 }} name={showUpcoming ? "up" : "down"} size={22} color={theme.name === "light" ? "#404040" : "#FFFFFF"} />
-                                </TouchableOpacity>
+                                <View style={styles.touchShowComplete}>
+                                    <Text style={styles.sectionTitle}>Upcoming Tasks</Text>
+                                    <TouchableOpacity onPress={changeShowUpcoming} style={{ flexDirection: "row" }}>
+                                        {filteredTasks.upcoming.length > 0 && (
+                                            <View style={styles.number}>
+                                                <Text style={{ fontSize: 12, color: theme.text }}>
+                                                    {filteredTasks.upcoming.length}
+                                                </Text>
+                                            </View>
+                                        )}
+                                        <AntDesign style={{ right: 10 }} name={showUpcoming ? "up" : "down"} size={22} color={theme.name === "light" ? "#404040" : "#FFFFFF"} />
+                                    </TouchableOpacity>
+                                </View>
                                 {/* upcoming tasks */}
                                 {showUpcoming && (
                                     <FlatList
@@ -189,7 +207,7 @@ const ListTasks = ({ route, navigation }) => {
                                         ListEmptyComponent={
                                             // image user has not added a task yet
                                             <Image
-                                                source={require("../../../assets/images/addTask.png")}
+                                                source={require("../../../../assets/images/addTask.png")}
                                                 style={styles.img} />
                                         }
                                     />
@@ -198,10 +216,19 @@ const ListTasks = ({ route, navigation }) => {
                         )}
 
                         {/* hide or show completed tasks */}
-                        <TouchableOpacity onPress={changeShowComplete} style={styles.touchShowComplete}>
-                            <Text style={styles.sectionTitle}>Completed Tasks<Text style={{ color: theme.textTime }}>{filteredTasks.completed.length > 0 && `   ${filteredTasks.completed.length}`}</Text></Text>
-                            <AntDesign style={{ right: 10 }} name={showCompleted ? "up" : "down"} size={22} color={theme.name === "light" ? "#404040" : "#FFFFFF"} />
-                        </TouchableOpacity>
+                        <View style={styles.touchShowComplete}>
+                            <Text style={styles.sectionTitle}>Completed Tasks</Text>
+                            <TouchableOpacity onPress={changeShowComplete} style={{ flexDirection: "row" }}>
+                                {filteredTasks.completed.length > 0 && (
+                                    <View style={styles.number}>
+                                        <Text style={{ fontSize: 12, color: theme.text }}>
+                                            {filteredTasks.completed.length}
+                                        </Text>
+                                    </View>
+                                )}
+                                <AntDesign style={{ right: 10 }} name={showCompleted ? "up" : "down"} size={22} color={theme.name === "light" ? "#404040" : "#FFFFFF"} />
+                            </TouchableOpacity>
+                        </View>
 
                         {/* completed tasks */}
                         {showCompleted && (
@@ -214,9 +241,8 @@ const ListTasks = ({ route, navigation }) => {
                                 )}
                                 scrollEnabled={false}
                                 ListEmptyComponent={
-                                    // image all completed!
                                     <Image
-                                        source={require("../../../assets/images/tasksCompleted.png")}
+                                        source={require("../../../../assets/images/tasksCompleted.png")}
                                         style={styles.img} />
                                 }
                             />
@@ -236,7 +262,7 @@ const ListTasks = ({ route, navigation }) => {
                     disabled={filteredTasks.pastAndCurrent.filter(task => !task.completed).length <= 1}
                     onPress={() => setModalStart(true)}>
                     <Image
-                        source={require("../../../assets/images/dice.png")}
+                        source={require("../../../../assets/images/dice.png")}
                         style={styles.imgRandom} />
                 </TouchableOpacity>
 
@@ -275,7 +301,7 @@ const useStyles = (theme) => StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         width: "100%",
-        marginBottom: 65
+        marginBottom: 65,
     },
     sectionTitle: {
         fontSize: 22,
@@ -283,15 +309,14 @@ const useStyles = (theme) => StyleSheet.create({
         color: theme.tabText,
         marginVertical: 10,
         paddingHorizontal: 10,
-        width: "100%"
     },
     touchShowComplete: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "space-between",
         marginVertical: 10,
         paddingHorizontal: 10,
-        width: "100%"
+        width: 360
     },
     addTaskButton: {
         borderRadius: 50,
@@ -357,6 +382,15 @@ const useStyles = (theme) => StyleSheet.create({
         justifyContent: "space-between",
         padding: 10
     },
+    number: {
+        backgroundColor: "rgba(255, 255, 255, 0.2)",
+        width: 25,
+        height: 25,
+        borderRadius: 20,
+        alignItems: "center",
+        justifyContent: "center",
+        right: 20
+    }
 });
 
 export default ListTasks;

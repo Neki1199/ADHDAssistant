@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react"
 import { TouchableOpacity, Keyboard, StyleSheet, Text, View, Image, TouchableWithoutFeedback } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { CountdownCircleTimer } from "react-native-countdown-circle-timer"
-import { ThemeContext } from "../../contexts/ThemeContext";
+import { ThemeContext } from "../../../contexts/ThemeContext";
 
 export default function TasksStart({ route, navigation }) {
     const tasks = route?.params?.tasks || [];
@@ -54,7 +54,7 @@ export default function TasksStart({ route, navigation }) {
                     {selectedTask && !openTaskScreen && (
                         <>
                             <Image
-                                source={require("../../../assets/images/timer.png")}
+                                source={require("../../../../assets/images/timer.png")}
                                 style={styles.img} />
                             <View style={styles.askContainer}>
 

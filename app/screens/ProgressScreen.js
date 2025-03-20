@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import SegmentedControlTab from "react-native-segmented-control-tab";
 import EmotionsProgress from "./Emotions/EmotionsProgress";
-import TasksProgress from "./Tasks/TasksProgress";
+import TasksProgress from "../screens/Tasks/Screens/TasksProgress";
 import { LinearGradient } from 'expo-linear-gradient';
 import { ThemeContext } from '../contexts/ThemeContext';
 

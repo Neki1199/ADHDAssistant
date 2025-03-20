@@ -3,8 +3,8 @@ import { Alert, KeyboardAvoidingView, Image, Platform, View, StyleSheet, Text, T
 import { LinearGradient } from 'expo-linear-gradient';
 import AntDesign from "react-native-vector-icons/AntDesign";
 import { CountdownCircleTimer } from "react-native-countdown-circle-timer"
-import { setCompleted } from "./TasksDB";
-import { ThemeContext } from '../../contexts/ThemeContext';
+import { setCompleted } from "../TasksDB";
+import { ThemeContext } from '../../../contexts/ThemeContext';
 
 // TASK TIMER SCREEN
 const TaskTimer = ({ route, navigation }) => {
@@ -313,7 +313,7 @@ const TaskTimer = ({ route, navigation }) => {
                                 <>
                                     <Text style={[styles.title, { fontSize: 30, padding: 10 }]}>Break Time</Text>
                                     <Image
-                                        source={require("../../../assets/images/break.png")}
+                                        source={require("../../../../assets/images/break.png")}
                                         style={[styles.img, { position: "absolute", width: 850, height: 850, bottom: -160, left: -235 }]} />
                                     <CountdownCircleTimer
                                         isPlaying={startBreak}
@@ -408,7 +408,7 @@ const TaskTimer = ({ route, navigation }) => {
                             {taskCompleted && (
                                 <View style={styles.completionContainer}>
                                     <Image
-                                        source={require("../../../assets/images/completed.png")}
+                                        source={require("../../../../assets/images/completed.png")}
                                         style={styles.img} />
                                     <Text style={styles.title}>Have you finished your task?</Text>
                                     <View style={styles.btnCompletedContainer}>

@@ -14,8 +14,10 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
     const [every, setEvery] = useState("1");
     const [days, setDays] = useState([]);
     const [dayMonth, setDayMonth] = useState(dayjs(date).format("DD"));
+    const [starts, setStarts] = useState(date);
     const [ends, setEnds] = useState("Never");
     const [showPicker, setShowPicker] = useState(false);
+    const [showStartsPicker, setShowStartsPicker] = useState(false);
     const [isOnDateSelected, setIsOnDateSelected] = useState(false); // if selected on date btn
 
     const types = [
@@ -32,9 +34,10 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
             setEvery(repeat.every?.toString() || "1");
             setDays(repeat.days || []);
             setDayMonth(repeat.dayMonth || dayjs(date).format("DD"));
+            setStarts(repeat.starts || date)
             setEnds(repeat.ends || "Never");
         }
-    }, [showRepeatModal, repeat, date]); // set all data when open modal
+    }, [showRepeatModal, repeat]); // set all data when open modal
 
     // do not store the days if not weekly, and set never if once
     useEffect(() => {
@@ -47,6 +50,7 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
         }
     }, [type]);
 
+    // add day to the list
     const addDay = (day) => {
         setDays((prev) =>
             prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
@@ -60,6 +64,22 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
             setEvery("1");
         } else {
             setEvery(newVal.slice(0, 2));
+        }
+    };
+
+    // don't go more than 31
+    const handleMonth = (value) => {
+        const newVal = value.replace(/^0+(?=\d)/, "");
+        if (newVal > 31) {
+            setDayMonth("31");
+        } else {
+            setDayMonth(newVal);
+        }
+    };
+
+    const handleBlurMonth = () => {
+        if (dayMonth === "" || dayMonth === "0") {
+            setDayMonth("1"); // default 1
         }
     };
 
@@ -81,7 +101,33 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
         setShowPicker(false);
     };
 
+    const onStartsChange = (event, selectedValue) => {
+        if (event.type === "set" && selectedValue) {
+            setStarts(dayjs(selectedValue).format("YYYY-MM-DD"));
+        } else if (event.type === "dismissed") {
+            setStarts(date);
+        }
+        setShowStartsPicker(false);
+    }
+
     const setAll = () => {
+        if (type === "Monthly" && (dayMonth === 0 || parseInt(dayMonth) === 0)) {
+            Alert.alert(
+                "⚠️ Ups!",
+                "Day of month cannot be 0",
+                [{ text: "Try Again", style: "default" }]
+            );
+            setDayMonth("1");
+            return;
+        }
+
+        if (type === "Monthly") {
+            const month = dayjs().month() + 1;
+            const year = dayjs().year();
+            const newDate = `${year}-${month.toString().padStart(2, "0")}-${dayMonth.toString().padStart(2, "0")}`;
+            setStarts(newDate);
+        }
+
         // if no days selected on weekly
         if (type === "Weekly" && days.length === 0) {
             Alert.alert(
@@ -97,6 +143,7 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
             every: parseInt(every) || 1,
             days,
             dayMonth,
+            starts,
             ends
         };
 
@@ -106,25 +153,18 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
 
     // if close, and there was data already, do not change it
     const clearAll = () => {
-        if (type !== "Once") {
-            setType(repeat.type || "Once");
-            setEvery(repeat.every?.toString() || "1");
-            setDays(repeat.days || []);
-            setDayMonth(repeat.dayMonth || dayjs(date).format("DD"));
-            setEnds(repeat.ends || "Never");
-            setShowPicker(false);
-            setShowRepeatModal(false);
-        } else {
-            setType("Once");
-            setEvery("1");
-            setDays([]);
-            setDayMonth(dayjs(date).format("DD"));
-            setEnds("Never");
-            setShowPicker(false);
+        setType(repeat.type || "Once");
+        setEvery(repeat.every?.toString() || "1");
+        setDays(repeat.days || []);
+        setDayMonth(repeat.dayMonth || dayjs(date).format("DD"));
+        setStarts(repeat.starts || date);
+        setEnds(repeat.ends || "Never");
+        setShowPicker(false);
+        setShowRepeatModal(false);
+        if (type === "Once") {
             setIsOnDateSelected(false);
-            setShowRepeatModal(false);
         }
-    }
+    };
 
     return (
         <Modal visible={showRepeatModal} transparent={true} animationType="slide">
@@ -210,28 +250,31 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
                                             onPress={() => setDayMonth(dayjs(date).format("DD"))}
                                             style={[styles.btn, {
                                                 width: dayMonth !== "Last" ? 200 : 100,
-                                                height: dayMonth !== "Last" && 90,
+                                                height: dayMonth !== "Last" && 60,
                                                 backgroundColor: theme.name === "light" ?
                                                     (dayMonth !== "Last" ? "#4B4697" : "#FFFFFF")
-                                                    : (dayMonth !== "Last" ? "#171443" : "#7C7A97"),
+                                                    : (dayMonth !== "Last" ? "#24214A" : "#7C7A97"),
                                                 flexDirection: "row",
                                                 gap: 20
                                             }]}
                                         >
-                                            <Text style={[styles.btnText, {
-                                                color: theme.name === "light" ?
-                                                    (dayMonth !== "Last" ? "#FFFFFF" : "#2C2679")
-                                                    : "#FFFFFF"
-                                            }]}>Day</Text>
-                                            {dayMonth !== "Last" && (
+                                            {dayMonth === "Last" ? (
+                                                <Text style={[styles.btnText, {
+                                                    color: theme.name === "light" ?
+                                                        (dayMonth !== "Last" ? "#FFFFFF" : "#2C2679")
+                                                        : "#FFFFFF"
+                                                }]}>Set Day</Text>
+                                            ) : (
                                                 <TextInput
                                                     // make if entered 0, put 1. No more than 31 days
-                                                    style={[styles.input, { width: 60, fontSize: 20, bottom: 9 }]}
+                                                    style={[styles.input, { width: 50, height: 50, fontSize: 18, bottom: 9 }]}
                                                     placeholder="1"
+                                                    placeholderTextColor="#808080"
                                                     keyboardType="numeric"
                                                     maxLength={dayMonth === "Last" ? 4 : 2}
                                                     value={dayMonth}
-                                                    onChangeText={setDayMonth}
+                                                    onChangeText={handleMonth}
+                                                    onBlur={handleBlurMonth}
                                                 />
                                             )}
                                         </TouchableOpacity>
@@ -255,6 +298,37 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
 
                             )}
                         </View>
+
+                        {/* when repeats should start */}
+                        {type !== "Monthly" && (
+                            <View style={styles.endRepeatContainer}>
+                                <Text style={styles.textTitle}>Starts</Text>
+                                <TouchableOpacity onPress={() => setShowStartsPicker(true)}
+                                    disabled={type === "Once"}
+                                    style={[styles.btn, {
+                                        marginBottom: 20,
+                                        backgroundColor: theme.name === "light" ?
+                                            "#4B4697" : "#171443",
+                                        opacity: type === "Once" ? 0.5 : 1
+                                    }]}>
+                                    <Text style={[styles.btnText, {
+                                        color: theme.name === "light"
+                                            ? "#FFFFFF" : "#FFFFFF"
+                                    }]}>{dayjs(starts).format("DD MMMM YYYY")}</Text>
+                                </TouchableOpacity>
+                                {showStartsPicker && (
+                                    <DateTimePicker
+                                        value={dayjs(starts).toDate()}
+                                        mode="date"
+                                        display="default"
+                                        onChange={onStartsChange}
+                                        design="default"
+                                        minimumDate={dayjs().toDate()}
+                                    />
+                                )}
+                            </View>
+                        )}
+
 
                         {/* when the repeat ends */}
                         <View style={styles.endRepeatContainer}>
@@ -305,7 +379,6 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
 
                             {isOnDateSelected && showPicker && (
                                 <DateTimePicker
-
                                     value={ends === "Never" ? dayjs(date).toDate() : dayjs(ends).toDate()}
                                     mode="date"
                                     display="default"
@@ -333,7 +406,7 @@ const useStyles = (theme) => StyleSheet.create({
         height: "78%",
         alignItems: "center",
         padding: 25,
-        backgroundColor: theme.linear2,
+        backgroundColor: theme.container,
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
     },
