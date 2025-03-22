@@ -18,7 +18,9 @@ export const addTask = async (name, date, time, reminder, repeat, duration, comp
         await setDoc(taskRef, {
             id: taskRef.id, name, date, time, reminder, repeat, duration, completed, list, completedDate, parentID
         });
-        return { id: taskRef.id }; // return the id
+
+        const task = await getDoc(taskRef);
+        return { id: taskRef.id, data: task.data() };
     } catch (error) {
         console.log("Error adding task: ", error);
         Alert.alert(
@@ -388,8 +390,6 @@ export const getProgress = (listID, setProgress) => {
     const tasksRef = collection(db, "users", userID, "todoLists", listID, "Tasks");
 
     return onSnapshot(tasksRef, (snapshot) => {
-        let totalTasks = 0;
-        let completedTasks = 0; // for other lists
         let totalTasksDaily = 0; // for total daily tasks
         let completedTasksDaily = 0; // for daily completed
 
@@ -398,8 +398,6 @@ export const getProgress = (listID, setProgress) => {
             const taskDate = taskData.date;
             const taskCompleted = taskData.completed;
             const completedDate = taskData.completedDate || null;
-
-            totalTasks++; // count all tasks for non daily lists
 
             // check if task is for today or past
             const isTodayTask = taskDate === currentDate;
@@ -415,19 +413,12 @@ export const getProgress = (listID, setProgress) => {
             if (taskCompleted && completedDate === currentDate) {
                 completedTasksDaily++;
             }
-
-            // count completed tasks for non lists
-            if (taskCompleted) {
-                completedTasks++;
-            }
         });
-
-        if (listID === "Daily") {
-            // in daily, the upcoming tasks does not count
-            setProgress(totalTasksDaily > 0 ? (completedTasksDaily / totalTasksDaily) * 100 : 0);
+        if (totalTasksDaily === 0) {
+            setProgress(-1); // if there is no tasks for today
         } else {
-            setProgress(totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0);
-        };
+            setProgress(totalTasksDaily > 0 ? (completedTasksDaily / totalTasksDaily) * 100 : 0);
+        }
     });
 };
 

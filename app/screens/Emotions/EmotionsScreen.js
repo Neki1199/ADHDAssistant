@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Alert, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { doc, updateDoc, getDoc, setDoc, arrayUnion } from '@firebase/firestore';
 import { db, auth } from "../../../firebaseConfig";
 import dayjs from "dayjs";
@@ -70,28 +70,31 @@ export default function EmotionsHome() { // home emotions emoji
       </View>
 
       <Modal transparent={true} visible={visibleModal} animationType='slide'>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalInside}>
-            <Text style={styles.modalTitle}>{
-              selectedEmotion ? `Why are you feeling ${selectedEmotion.emoji}?` : "Select an emotion"}</Text>
-            <TextInput
-              style={styles.noteInput}
-              placeholder="Add and optional note"
-              value={note}
-              onChangeText={setNote}
-              placeholderTextColor={theme.text}
-              autoFocus={true}
-            />
-            <View style={styles.buttonsModal}>
-              <TouchableOpacity style={[styles.buttons, { backgroundColor: theme.name === "light" ? "#B90000" : "#56546F" }]} onPress={() => { setVisibleModal(false), setNote("") }}>
-                <Text style={styles.btnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.buttons, { backgroundColor: theme.name === "light" ? "#4B4697" : "#2A2572" }]} onPress={() => storeEmotion(selectedEmotion)}>
-                <Text style={styles.btnText}>Done</Text>
-              </TouchableOpacity>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalInside}>
+              <Text style={styles.modalTitle}>{
+                selectedEmotion ? `Why are you feeling ${selectedEmotion.emoji}?` : "Select an emotion"}</Text>
+              <TextInput
+                style={styles.noteInput}
+                placeholder="Add and optional note"
+                value={note}
+                onChangeText={setNote}
+                placeholderTextColor={theme.text}
+                autoFocus={true}
+              />
+              <View style={styles.buttonsModal}>
+                <TouchableOpacity style={[styles.buttons, { backgroundColor: theme.name === "light" ? "#B90000" : "#56546F" }]} onPress={() => { setVisibleModal(false), setNote("") }}>
+                  <Text style={styles.btnText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.buttons, { backgroundColor: theme.name === "light" ? "#4B4697" : "#2A2572" }]} onPress={() => storeEmotion(selectedEmotion)}>
+                  <Text style={styles.btnText}>Done</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
+
       </Modal>
     </View>
   )
@@ -101,7 +104,7 @@ const useStyles = (theme) => StyleSheet.create({
   emotionsView: {
     backgroundColor: theme.container,
     width: "90%",
-    height: "18%",
+    height: 150,
     borderRadius: 10,
     alignItems: 'center',
     padding: 10

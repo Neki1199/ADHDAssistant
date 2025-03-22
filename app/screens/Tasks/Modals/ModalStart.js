@@ -21,7 +21,7 @@ export const ModalStart = ({ tasks, modalStart, setModalStart, navigation }) => 
 
         const task = getRandomTask(tasksWithDuration);
         // go directly to the timer screen with a random task
-        navigation.navigate("TaskTimer", { task: task });
+        navigation.navigate("DurationBreak", { task: task });
     };
 
     const startAllTasks = () => {
@@ -31,10 +31,10 @@ export const ModalStart = ({ tasks, modalStart, setModalStart, navigation }) => 
         const task = getRandomTask(tasks);
         // if the random task has duration, go directly to task timer
         // else go to task start to let the user again choose to set timer or not
-        if (task?.duration === "") {
-            navigation.navigate("TasksStart", { tasks });
+        if (task.duration === "") {
+            navigation.navigate("TasksStart", { task: task });
         } else {
-            navigation.navigate("TaskTimer", { task: task });
+            navigation.navigate("DurationBreak", { task: task })
         }
     };
 
@@ -42,10 +42,10 @@ export const ModalStart = ({ tasks, modalStart, setModalStart, navigation }) => 
         const task = getRandomTask(tasksToStart);
 
         if (task.duration === "") {
-            navigation.navigate("TasksStart", { tasks: tasksToStart });
+            navigation.navigate("TasksStart", { task: task });
             setTasksToStart([]);
         } else {
-            navigation.navigate("TaskTimer", { task: task });
+            navigation.navigate("DurationBreak", { task: task })
             setTasksToStart([]);
         }
     };

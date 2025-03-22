@@ -6,7 +6,6 @@ import BouncyCheckbox from "react-native-bouncy-checkbox";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import dayjs from 'dayjs';
 import relativeTime from "dayjs/plugin/relativeTime";
-import { ThemeContext } from '../../../contexts/ThemeContext';
 
 dayjs.extend(relativeTime); // to use fromNow()
 
@@ -14,8 +13,6 @@ const TaskItem = ({ item, navigation, colour = null }) => {
     const [checked, setChecked] = useState(item.completed);
     const [modalVisible, setModalVisible] = useState(false);
     const currentDay = dayjs().format("YYYY-MM-DD");
-    const { theme } = useContext(ThemeContext);
-    const styles = useStyles(theme);
 
     const changeChecked = async () => {
         if (!checked) {
@@ -89,16 +86,17 @@ const TaskItem = ({ item, navigation, colour = null }) => {
                 {item.duration !== "" && (
                     <View style={styles.taskTimer}>
                         <Text style={styles.taskItemTime}>{getTotalMinutes(item.duration)} mins</Text>
+                        {/* play button at right */}
                         <TouchableOpacity
                             onPress={() => {
                                 if (!checked) {
-                                    navigation.navigate("TaskTimer", { task: item })
+                                    navigation.navigate("DurationBreak", { task: item, fromButton: true })
                                 }
                             }}
                             disabled={checked}
                             style={{ opacity: checked ? 0.5 : 1 }}
                         >
-                            <AntDesign name="play" size={30} color={theme.name === "light" ? "#4B4697" : (colour ? "#FFFFFF" : "#4B4697")} />
+                            <AntDesign name="play" size={30} color={"#4B4697"} />
                         </TouchableOpacity>
                     </View>
                 )}
@@ -122,7 +120,7 @@ const TaskItem = ({ item, navigation, colour = null }) => {
     );
 };
 
-const useStyles = (theme) => StyleSheet.create({
+const styles = StyleSheet.create({
     taskItem: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -155,7 +153,6 @@ const useStyles = (theme) => StyleSheet.create({
         alignItems: "center"
     },
     taskItemTime: {
-        color: theme.listText,
         fontFamily: "monospace",
         fontSize: 12,
         color: "#626262"

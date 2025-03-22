@@ -406,7 +406,7 @@ const useStyles = (theme) => StyleSheet.create({
         height: "78%",
         alignItems: "center",
         padding: 25,
-        backgroundColor: theme.container,
+        backgroundColor: theme.modalNewTask,
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
     },

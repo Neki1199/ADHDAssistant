@@ -34,7 +34,6 @@ const ListTasks = ({ route, navigation }) => {
 
     const [tasks, setTasks] = useState([]);
     const [showCompleted, setShowCompleted] = useState(false);
-    const [showUpcoming, setShowUpcoming] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [modalDeleteAll, setModalDeleteAll] = useState(false);
     const currentDay = dayjs().format("YYYY-MM-DD");
@@ -77,16 +76,6 @@ const ListTasks = ({ route, navigation }) => {
         }
     };
 
-    const changeShowUpcoming = async () => {
-        try {
-            const newShow = !showUpcoming;
-            setShowUpcoming(newShow);
-            await AsyncStorage.setItem(`showUpcoming${listID}`, JSON.stringify(newShow));
-        } catch (error) {
-            console.log("Could not save showUpcoming: ", error);
-        }
-    };
-
     const deleteAllCompletedModal = () => {
         return (
             <Modal visible={modalDeleteAll} transparent={true} animationType="fade">
@@ -110,8 +99,7 @@ const ListTasks = ({ route, navigation }) => {
     const filteredTasks = {
         pastAndCurrent: tasks.filter(task => task.date <= currentDay),
         uncompleted: tasks.filter(task => !task.completed),
-        completed: tasks.filter(task => task.completed),
-        upcoming: tasks.filter(task => !task.completed && task.date > currentDay)
+        completed: tasks.filter(task => task.completed)
     };
 
     // get all tasks that are completed (for daily, only past and current tasks)
@@ -178,43 +166,6 @@ const ListTasks = ({ route, navigation }) => {
                             />
                         )}
 
-                        {listID !== "Daily" && (
-                            // hide or show upcoming tasks 
-                            <>
-                                <View style={styles.touchShowComplete}>
-                                    <Text style={styles.sectionTitle}>Upcoming Tasks</Text>
-                                    <TouchableOpacity onPress={changeShowUpcoming} style={{ flexDirection: "row" }}>
-                                        {filteredTasks.upcoming.length > 0 && (
-                                            <View style={styles.number}>
-                                                <Text style={{ fontSize: 12, color: theme.text }}>
-                                                    {filteredTasks.upcoming.length}
-                                                </Text>
-                                            </View>
-                                        )}
-                                        <AntDesign style={{ right: 10 }} name={showUpcoming ? "up" : "down"} size={22} color={theme.name === "light" ? "#404040" : "#FFFFFF"} />
-                                    </TouchableOpacity>
-                                </View>
-                                {/* upcoming tasks */}
-                                {showUpcoming && (
-                                    <FlatList
-                                        style={styles.flatlist}
-                                        data={filteredTasks.uncompleted.filter(task => task.date > currentDay)}
-                                        keyExtractor={item => `${item.id}-${item.date}`}
-                                        renderItem={({ item }) => (
-                                            <TaskItem item={item} navigation={navigation} />
-                                        )}
-                                        scrollEnabled={false}
-                                        ListEmptyComponent={
-                                            // image user has not added a task yet
-                                            <Image
-                                                source={require("../../../../assets/images/addTask.png")}
-                                                style={styles.img} />
-                                        }
-                                    />
-                                )}
-                            </>
-                        )}
-
                         {/* hide or show completed tasks */}
                         <View style={styles.touchShowComplete}>
                             <Text style={styles.sectionTitle}>Completed Tasks</Text>
@@ -256,6 +207,8 @@ const ListTasks = ({ route, navigation }) => {
                     onPress={() => setModalVisible(true)}>
                     <AntDesign name="plus" size={22} color="#FFFFFF" />
                 </TouchableOpacity>
+
+                {/* random button */}
                 <TouchableOpacity
                     style={[styles.pickRandomButton,
                     { opacity: filteredTasks.pastAndCurrent.filter(task => !task.completed).length > 1 ? 1 : 0.5 }]}
@@ -383,7 +336,7 @@ const useStyles = (theme) => StyleSheet.create({
         padding: 10
     },
     number: {
-        backgroundColor: "rgba(255, 255, 255, 0.2)",
+        backgroundColor: theme.numberTasks,
         width: 25,
         height: 25,
         borderRadius: 20,

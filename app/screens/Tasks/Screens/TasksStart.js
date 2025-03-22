@@ -3,35 +3,26 @@ import { TouchableOpacity, Keyboard, StyleSheet, Text, View, Image, TouchableWit
 import { LinearGradient } from "expo-linear-gradient";
 import { CountdownCircleTimer } from "react-native-countdown-circle-timer"
 import { ThemeContext } from "../../../contexts/ThemeContext";
+import RouletteRandom from "../Modals/RouletteRandom";
 
 export default function TasksStart({ route, navigation }) {
-    const tasks = route?.params?.tasks || [];
+    const { task } = route.params;
     const { theme } = useContext(ThemeContext);
     const styles = useStyles(theme);
+    const [showRoulette, setShowRoulette] = useState(false);
 
-    const [selectedTask, setSelectedTask] = useState(null);
     const [openTaskScreen, setOpenTaskScreen] = useState(false);
     const [timerCompleted, setTimerCompleted] = useState(false);
 
+    // roulette gif
     useEffect(() => {
-        navigation.setOptions({
-            headerStyle: {
-                borderBottomWidth: 0,
-                elevation: 0,
-                shadowOpacity: 0,
-                backgroundColor: theme.header
-            },
-        });
-    }, [theme, navigation])
+        setShowRoulette(true);
+        const timeOut = setTimeout(() => {
+            setShowRoulette(false);
+        }, 4000);
 
-    // select a random task
-    useEffect(() => {
-        if (tasks.length > 0) {
-            const randomIndex = Math.floor(Math.random() * tasks.length);
-            setSelectedTask(tasks[randomIndex]);
-        }
-    }, [tasks]);
-
+        return () => clearTimeout(timeOut);
+    }, [task]);
 
     return (
         // to touch outside when input writing
@@ -41,79 +32,86 @@ export default function TasksStart({ route, navigation }) {
                     colors={[theme.header, theme.linear2]}
                     style={styles.gradient}>
 
-                    {selectedTask && (
+                    {showRoulette ? (<RouletteRandom />) : (
                         <>
-                            <Text style={styles.title}>The task selected is...</Text>
+                            {task && (
+                                <>
+                                    <Text style={styles.title}>The task selected is...</Text>
 
-                            <View style={styles.containerTitle}>
-                                <Text style={styles.title}>{selectedTask.name}</Text>
-                            </View>
-                        </>)}
+                                    <View style={styles.containerTitle}>
+                                        <Text style={styles.title}>{task.name}</Text>
+                                    </View>
+                                </>)}
 
-                    {/* if task has no duration */}
-                    {selectedTask && !openTaskScreen && (
-                        <>
-                            <Image
-                                source={require("../../../../assets/images/timer.png")}
-                                style={styles.img} />
-                            <View style={styles.askContainer}>
+                            {/* if task has no duration */}
+                            {task && !openTaskScreen && (
+                                <>
+                                    <Image
+                                        source={require("../../../../assets/images/timer.png")}
+                                        style={styles.img} />
+                                    <View style={styles.askContainer}>
 
-                                <Text style={styles.textAsk}>Do you want to set a timer?</Text>
-                                <TouchableOpacity style={styles.btn} onPress={() => setOpenTaskScreen(true)}>
-                                    <Text style={styles.btnText}>No, I don't need a timer for this!</Text>
-                                </TouchableOpacity>
+                                        <Text style={styles.textAsk}>Do you want to set a timer?</Text>
+                                        <TouchableOpacity style={styles.btn} onPress={() => setOpenTaskScreen(true)}>
+                                            <Text style={styles.btnText}>No, I don't need a timer for this!</Text>
+                                        </TouchableOpacity>
 
 
-                                <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate("TaskTimer", { task: selectedTask })}>
-                                    <Text style={styles.btnText}>Yes, let's start a timer</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </>
-                    )}
-
-                    {/* screen for task without timer (show an image and checkbox) */}
-                    {openTaskScreen && (
-                        <View style={[styles.noDurationContainer, { backgroundColor: theme.name === "dark" && "rgba(255, 255, 255, 0.2)" }]}>
-                            <Text style={styles.timerTitle}>When the timer stops <Text style={styles.timerTitleStart}>START</Text> your task!</Text>
-                            <Text style={styles.timerText}>Even if you don't want to...</Text>
-                            {!timerCompleted ? (
-
-                                <CountdownCircleTimer
-                                    isPlaying
-                                    duration={5}
-                                    colors={['#4B4697', '#7E4697', "#974674", "#CD0066", '#CC0000']}
-                                    colorsTime={[5, 4, 3, 2, 0]}
-                                    onComplete={() =>
-                                        setTimerCompleted(true)
-                                    }
-                                    size={150}
-                                    trailColor="#FFFFFF"
-                                >
-                                    {({ remainingTime }) => {
-                                        let textCol;
-                                        if (remainingTime === 5) {
-                                            textCol = "#4B4697";
-                                        } else if (remainingTime === 4) {
-                                            textCol = "#7E4697";
-                                        } else if (remainingTime === 3) {
-                                            textCol = "#974674";
-                                        } else if (remainingTime === 2) {
-                                            textCol = "#CD0066";
-                                        } else {
-                                            textCol = "#CC0000";
-                                        }
-                                        return (
-                                            <Text style={[styles.timeCountdown, { color: textCol }]}>{remainingTime}</Text>
-                                        );
-                                    }}
-                                </CountdownCircleTimer>
-                            ) : (
-                                <TouchableOpacity style={[styles.btn, { marginTop: 20, backgroundColor: theme.name === "dark" && "#1C1C1C" }]} onPress={() => navigation.goBack()}>
-                                    <Text style={styles.btnText}>Return To Tasks</Text>
-                                </TouchableOpacity>
+                                        <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate("DurationBreak", { task: task })}>
+                                            <Text style={styles.btnText}>Yes, let's start a timer</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </>
                             )}
 
-                        </View>
+                            {/* screen for task without timer (show an image and checkbox) */}
+                            {openTaskScreen && (
+                                <View style={[styles.noDurationContainer, {
+                                    backgroundColor: theme.name === "dark"
+                                        ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.8)"
+                                }]}>
+                                    <Text style={styles.timerTitle}>When the timer stops <Text style={styles.timerTitleStart}>START</Text> your task!</Text>
+                                    <Text style={styles.timerText}>Even if you don't want to...</Text>
+                                    {!timerCompleted ? (
+
+                                        <CountdownCircleTimer
+                                            isPlaying
+                                            duration={10}
+                                            colors={
+                                                theme.name === "light" ? ["#4B4697", "#7E4697", "#974674", "#CC0000"]
+                                                    : ["#9891FF", "#B26AD1", "#B34B4B", "#BD0000"]}
+                                            colorsTime={[10, 4, 2, 0]}
+                                            onComplete={() =>
+                                                setTimerCompleted(true)
+                                            }
+                                            size={150}
+                                            trailColor="#FFFFFF"
+                                        >
+                                            {({ remainingTime }) => {
+                                                let textCol;
+                                                if (remainingTime > 4) {
+                                                    textCol = theme.name === "light" ? "#4B4697" : "#9891FF";
+                                                } else if (remainingTime === 4) {
+                                                    textCol = theme.name === "light" ? "#7E4697" : "#B26AD1";
+                                                } else if (remainingTime === 3) {
+                                                    textCol = theme.name === "light" ? "#974674" : "#B34B4B";
+                                                } else if (remainingTime < 3) {
+                                                    textCol = theme.name === "light" ? "#CC0000" : "#BD0000";
+                                                }
+                                                return (
+                                                    <Text style={[styles.timeCountdown, { color: textCol }]}>{remainingTime}</Text>
+                                                );
+                                            }}
+                                        </CountdownCircleTimer>
+                                    ) : (
+                                        <TouchableOpacity style={[styles.btn, { marginTop: 20, backgroundColor: theme.header }]} onPress={() => navigation.goBack()}>
+                                            <Text style={styles.btnText}>Return To Tasks</Text>
+                                        </TouchableOpacity>
+                                    )}
+
+                                </View>
+                            )}
+                        </>
                     )}
                 </LinearGradient>
             </View>

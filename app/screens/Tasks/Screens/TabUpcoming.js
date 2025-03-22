@@ -99,7 +99,7 @@ const ListUpcoming = ({ navigation }) => {
     useEffect(() => {
         const [year, month] = currentMonth.split("-");
         getMonthTasks(month, year);
-    }, [currentMonth]);
+    }, [currentMonth, tasks]);
 
     // set tasks to show on flatlist
     useEffect(() => {
@@ -349,7 +349,7 @@ const useStyles = (theme) => StyleSheet.create({
         color: theme.tabText
     },
     number: {
-        backgroundColor: "rgba(255, 255, 255, 0.2)",
+        backgroundColor: theme.numberTasks,
         width: 25,
         height: 25,
         borderRadius: 20,

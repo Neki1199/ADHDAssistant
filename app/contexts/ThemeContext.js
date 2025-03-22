@@ -32,6 +32,7 @@ export const lightTheme = {
     textTimer: "#606060",
     textTime: "#4B4697",
     textBreak: "#000000",
+    numberTasks: "rgba(0, 0, 0, 0.1)"
 
 };
 
@@ -66,6 +67,7 @@ export const darkTheme = {
     textTimer: "#A2A0BA",
     textTime: "#A8A2FF",
     textBreak: "#938BFF",
+    numberTasks: "rgba(255, 255, 255, 0.2)"
 };
 
 export const ThemeContext = createContext();

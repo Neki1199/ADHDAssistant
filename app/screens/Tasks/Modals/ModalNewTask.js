@@ -1,52 +1,86 @@
 import React, { useState, useContext, useEffect } from "react";
 import { Alert, View, ActivityIndicator, Keyboard, TouchableWithoutFeedback, StyleSheet, Text, TouchableOpacity, Modal, TextInput } from "react-native";
-import { addTask, deleteTask, deleteRepeatedTasks } from "../TasksDB"
+import { addTask, deleteTask, deleteRepeatedTasks, changeTask } from "../TasksDB"
 import { ListsContext } from "../../../contexts/ListsContext";
 import { AntDesign } from "@expo/vector-icons";
 import { TimerPickerModal } from "react-native-timer-picker";
 import { Calendar } from "react-native-calendars";
 import dayjs from "dayjs";
-import * as Notifications from "expo-notifications";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import TaskDetails from "../Components/TaskDetails";
 import RepeatSelection from "../Components/RepeatSelection";
 import { ThemeContext } from "../../../contexts/ThemeContext";
+import { removeNotification, removeRepeatNotifications, scheduleNotification } from "../Components/Notifications";
 
-// when added task, schedule notification
-const scheduleNotification = async (date, message, parentID, taskID) => {
-    try {
-        if (!date || isNaN(date.getTime())) {
-            console.log("Invalid notification date: ", date);
+
+// get dates from repeat field, date is the starts field in repeat, not date from task
+export const getDatesRepeat = (date, repeat) => {
+    const datesRepeat = [];
+    const startDate = dayjs(date);
+    let currentDate = startDate;
+    const maxTasks = 30; // limit of tasks for never
+    const days = repeat.days;
+
+    const dayMap = {
+        "Mon": 0,
+        "Tue": 1,
+        "Wed": 2,
+        "Thu": 3,
+        "Fri": 4,
+        "Sat": 5,
+        "Sun": 6
+    };
+
+    // add intervals from starts
+    while (true) {
+        if (repeat.type === "Daily") {
+            datesRepeat.push(currentDate.format("YYYY-MM-DD"));
+            currentDate = currentDate.add(repeat.every, "day");
+        } else if (repeat.type === "Weekly") {
+            days.forEach(day => {
+                const dayIndex = dayMap[day]; // get day index
+                // add one more day (so its exact)
+                const oneDayMore = currentDate.day(dayIndex).add(1, "day");
+                const dateDay = oneDayMore.format("YYYY-MM-DD");
+                if (dayjs(dateDay).isAfter(startDate) || dayjs(dateDay).isSame(startDate)) {
+                    datesRepeat.push(dateDay);
+                }
+            });
+            currentDate = currentDate.add(repeat.every, "week");
+        } else if (repeat.type === "Monthly") {
+            // handle 30-31
+            if (repeat.dayMonth === "Last") {
+                currentDate = currentDate.endOf("month");
+            } else {
+                // get smaller day (if 31, get 28, or 30)
+                const daysInMonth = currentDate.daysInMonth();
+                const smallerDay = Math.min(repeat.dayMonth, daysInMonth);
+                currentDate = currentDate.date(smallerDay);
+            }
+            // break beforehand if its after
+            if (repeat.ends !== "Never" && currentDate.isAfter(dayjs(repeat.ends))) {
+                break;
+            }
+            datesRepeat.push(currentDate.format("YYYY-MM-DD"));
+
+            currentDate = currentDate.add(repeat.every, "month");
+        } else if (repeat.type === "Yearly") {
+            // break beforehand if year is after
+            if (repeat.ends !== "Never" && currentDate.isAfter(dayjs(repeat.ends))) {
+                break;
+            }
+            datesRepeat.push(currentDate.format("YYYY-MM-DD"));
+            currentDate = currentDate.add(repeat.every, "year");
         }
 
-        await Notifications.scheduleNotificationAsync({
-            content: {
-                title: "🔔 Task Reminder",
-                body: message,
-                sound: "notification.wav",
-                data: { parentID }
-            },
-            trigger: { type: "date", timestamp: date },
-            identifier: taskID
-        });
-    } catch (error) {
-        console.log("Error setting notification: ", error);
-    }
-};
-
-
-const removeNotification = async (taskID) => {
-    await Notifications.cancelScheduledNotificationAsync(taskID);
-};
-
-// remove all notifications from a task (repeated tasks and main)
-const removeRepeatNotifications = async (parentID) => {
-    const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
-    for (const notification of allNotifications) {
-        if (notification.content?.data?.parentID === parentID) {
-            await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+        if (repeat.ends === "Never") {
+            if (datesRepeat.length >= maxTasks) break;
+        } else if (repeat.ends !== "Never" && currentDate.isAfter(dayjs(repeat.ends))) {
+            break;
         }
     }
-}
+    return datesRepeat;
+};
 
 // task = null, when long press the task to change or delete
 // if null, is a new task, if not null, is being edited
@@ -154,6 +188,15 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
         }
     };
 
+    // store the last repeat
+    const storeLastRepeat = async (lastRepeat) => {
+        try {
+            await AsyncStorage.setItem(`repeat_${lastRepeat.parentID}`, JSON.stringify(lastRepeat));
+        } catch (error) {
+            console.log("Could not store last repeat: ", error);
+        }
+    };
+
     // change a task
     const change = async () => {
         if (name.trim() === "") {
@@ -169,7 +212,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
 
         try {
             // if its a parent task, get task.id, if its a repeated task, get its parent id
-            let parentID = task.parentID ? task.parentID : task.id;
+            let parentID = task.parentID || task.id;
 
             const newData = {
                 name,
@@ -181,33 +224,44 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                 list: otherList
             };
 
-            // check if there is any change
-            const hasChanged = isTaskChanged(task, newData);
+            // if there is no change
+            if (!isTaskChanged(task, newData)) {
+                closeModal();
+                setLoading(false);
+                return;
+            }
 
-            if (hasChanged) {
-                // remove all repeated tasks
+            if (newData.repeat.type === "Once" && task.repeat.type === "Once") {
+                // if type is still once, change task
+                await changeTask(task, newData);
+                await removeNotification(task.id);
+                await addNotification(newData.date, parentID, task.id);
+            } else {
+                // remove all repeated tasks and notif
                 await deleteRepeatedTasks(task);
+                await removeRepeatNotifications(parentID);
                 // remove main task
                 if (task.parentID === null) {
                     deleteTask(task);
                 } else {
                     deleteTask(task, parentID);
                 }
-                // remove all repeated notifications (also removes main one)
-                await removeRepeatNotifications(parentID);
-
-                if (repeat.type === "Once") {
+                // if now is once, and it wasnt
+                if (newData.repeat.type === "Once" && task.repeat.type !== "Once") {
                     const newTask = await addTask(newData); // add new task
-                    // add new notification if reminder and date
                     await addNotification(newData.date, newTask.id, newTask.id);
-                } else {
-                    // add new ones
-                    saveTask();
+                } else { // add new repeated
+                    await saveTask();
                 }
-            } else {
-                closeModal();
             }
+            setLoading(false);
+            setModalVisible(false);
         } catch (error) {
+            Alert.alert(
+                "⚠️ Error",
+                "Could not change the task. Please try again."
+                [{ text: "Try Again", style: "default" }]
+            );
             console.log("Error changing task: ", error);
             setLoading(false);
         }
@@ -234,10 +288,11 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
 
             // add reminder for the main task (the add notification already handles if there is date and reminder set)
             await addNotification(taskDetails.Date.value, parentID, parentID);
-
             if (repeat.type !== "Once") {
                 let dateValue = repeat.starts;
-                let datesRepeat = getDatesRepeat(dateValue);
+                let datesRepeat = getDatesRepeat(dateValue, repeat);
+
+                const repeated = [];
                 for (const dateRepeat of datesRepeat) {
                     // add repeated tasks, but if starts is == to task date, do not add (to not create same task twice)
                     if (dateRepeat !== taskDetails.Date.value) {
@@ -245,9 +300,16 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                             repeat, taskDetails.Duration.value, completed,
                             otherList, completedDate, parentID);
 
+                        repeated.push(newTask.data);
                         // add notification
                         await addNotification(dateRepeat, parentID, newTask.id);
                     }
+                }
+                // store last task, if there is, to add more repeated tasks when the task date arrived
+                const lastTask = repeated[repeated.length - 1];
+                if ((lastTask.repeat.ends !== "Never" && dayjs(lastTask.date).isBefore(lastTask.repeat.ends))
+                    || lastTask.repeat.ends === "Never") {
+                    await storeLastRepeat(lastTask);
                 }
             }
             setLoading(false);
@@ -257,75 +319,6 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
             console.log("Error saving new task: ", error);
             setLoading(false);
         }
-    };
-
-    // get dates from repeat field, date is the starts field in repeat, not date from task
-    const getDatesRepeat = (date) => {
-        const datesRepeat = [];
-        const startDate = dayjs(date);
-        let currentDate = startDate;
-        const maxTasks = 30; // limit of tasks for never
-        const days = repeat.days;
-
-        const dayMap = {
-            "Mon": 0,
-            "Tue": 1,
-            "Wed": 2,
-            "Thu": 3,
-            "Fri": 4,
-            "Sat": 5,
-            "Sun": 6
-        };
-
-        // add intervals from starts
-        while (true) {
-            if (repeat.type === "Daily") {
-                datesRepeat.push(currentDate.format("YYYY-MM-DD"));
-                currentDate = currentDate.add(repeat.every, "day");
-            } else if (repeat.type === "Weekly") {
-                days.forEach(day => {
-                    const dayIndex = dayMap[day]; // get day index
-                    // add one more day (so its exact)
-                    const oneDayMore = currentDate.day(dayIndex).add(1, "day");
-                    const dateDay = oneDayMore.format("YYYY-MM-DD");
-                    if (dayjs(dateDay).isAfter(startDate) || dayjs(dateDay).isSame(startDate)) {
-                        datesRepeat.push(dateDay);
-                    }
-                });
-                currentDate = currentDate.add(repeat.every, "week");
-            } else if (repeat.type === "Monthly") {
-                // handle 30-31
-                if (repeat.dayMonth === "Last") {
-                    currentDate = currentDate.endOf("month");
-                } else {
-                    // get smaller day (if 31, get 28, or 30)
-                    const daysInMonth = currentDate.daysInMonth();
-                    const smallerDay = Math.min(repeat.dayMonth, daysInMonth);
-                    currentDate = currentDate.date(smallerDay);
-                }
-                // break beforehand if its after
-                if (repeat.ends !== "Never" && currentDate.isAfter(dayjs(repeat.ends))) {
-                    break;
-                }
-                datesRepeat.push(currentDate.format("YYYY-MM-DD"));
-
-                currentDate = currentDate.add(repeat.every, "month");
-            } else if (repeat.type === "Yearly") {
-                // break beforehand if year is after
-                if (repeat.ends !== "Never" && currentDate.isAfter(dayjs(repeat.ends))) {
-                    break;
-                }
-                datesRepeat.push(currentDate.format("YYYY-MM-DD"));
-                currentDate = currentDate.add(repeat.every, "year");
-            }
-
-            if (repeat.ends === "Never") {
-                if (datesRepeat.length >= maxTasks) break;
-            } else if (repeat.ends !== "Never" && currentDate.isAfter(dayjs(repeat.ends))) {
-                break;
-            }
-        }
-        return datesRepeat;
     };
 
     // calendar and time pickers
@@ -712,6 +705,7 @@ const useStyles = (theme) => StyleSheet.create({
         textAlign: "center",
         fontSize: 20,
         width: "100%",
+        height: 60,
         backgroundColor: theme.itemModal,
         color: theme.text,
         borderRadius: 10,

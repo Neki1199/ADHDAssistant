@@ -1,108 +1,15 @@
 import React, { useState, useEffect, useContext } from "react";
-import { View, Text, Alert, StatusBar, Modal, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Dimensions } from "react-native";
+import { View, Alert, StyleSheet, Dimensions } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-import { addNewList, changeList, deleteList } from "../screens/Tasks/TasksDB";
+import { changeList } from "../screens/Tasks/TasksDB";
 import ListTasks from "../screens/Tasks/Screens/TabLists";
 import ListUpcoming from "../screens/Tasks/Screens/TabUpcoming";
-import { AntDesign } from "@expo/vector-icons";
 import { ListsContext } from "../contexts/ListsContext";
 import { ThemeContext } from "../contexts/ThemeContext";
+import { AddList } from "../screens/Tasks/Modals/AddList";
+import { ChangeDeleteList } from "../screens/Tasks/Modals/ChangeDeleteList";
 
 const Tab = createMaterialTopTabNavigator();
-
-const ListModal = ({ modalVisible, setModalVisible, listName, setListName }) => {
-    const { theme } = useContext(ThemeContext);
-    const styles = useStyles(theme);
-
-    const addList = () => {
-        if (listName.trim() === "") {
-            Alert.alert(
-                "⚠️ Ups!",
-                "List name cannot be empty",
-                [{ text: "Try Again", style: "default" }]
-            );
-        } else {
-            addNewList(listName);
-            setModalVisible(false);
-            setListName("");
-        }
-    };
-
-    const closeModal = () => {
-        setModalVisible(false);
-        setListName("");
-    };
-
-    return (
-        <Modal transparent={true} visible={modalVisible} animationType="slide">
-            <View style={styles.modalContainer}>
-                <View style={styles.modalInside}>
-                    <View style={styles.topModal}>
-                        <TouchableOpacity onPress={() => closeModal()}>
-                            <AntDesign name="close" size={30} color={theme.name === "light" ? "#4B4697" : "#FFFFFF"} />
-                        </TouchableOpacity>
-                        <Text style={styles.modalTitle}>New List</Text>
-                        <TouchableOpacity onPress={() => addList()}>
-                            <AntDesign name="checkcircle" size={30} color={theme.name === "light" ? "#4B4697" : "#FFFFFF"} />
-                        </TouchableOpacity>
-                    </View>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter list name"
-                        value={listName}
-                        onChangeText={setListName}
-                        placeholderTextColor={theme.text}
-                    />
-                </View>
-            </View>
-        </Modal>
-    );
-}
-
-const ChangeDeleteModal = ({ modalChangeVisible, setModalChangeVisible, setNewListName, renameList, selectedListName, newListName, isRenaming }) => {
-    const { theme } = useContext(ThemeContext);
-    const styles = useStyles(theme);
-
-    const onDelete = async () => {
-        deleteList(selectedListName);
-        setModalChangeVisible(false);
-        setNewListName(""); // if user has entered something!
-    };
-
-    return (
-        <Modal transparent={true} visible={modalChangeVisible} animationType="slide">
-            <View style={styles.modalContainer}>
-                <View style={styles.modalInside}>
-                    <View style={styles.topModal}>
-                        <TouchableOpacity onPress={() => { setModalChangeVisible(false), setNewListName("") }}>
-                            <AntDesign name="close" size={30} color={theme.name === "light" ? "#4B4697" : "#FFFFFF"} />
-                        </TouchableOpacity>
-                        <Text style={styles.modalTitle}>Change List</Text>
-                        <TouchableOpacity onPress={renameList}>
-                            <AntDesign name="checkcircle" size={30} color={theme.name === "light" ? "#4B4697" : "#FFFFFF"} />
-                        </TouchableOpacity>
-                    </View>
-                    <TextInput
-                        style={styles.input}
-                        placeholder={selectedListName}
-                        value={newListName}
-                        onChangeText={setNewListName}
-                        placeholderTextColor={theme.text}
-                    />
-                    {isRenaming ? (
-                        <ActivityIndicator size="large" color="#0000ff"
-                            style={{ marginTop: 20 }} />
-                    ) : (
-                        <TouchableOpacity
-                            style={styles.btnDelete}
-                            onPress={onDelete}>
-                            <AntDesign name="delete" size={24} color={"#FFFFFF"} />
-                        </TouchableOpacity>)}
-                </View>
-            </View>
-        </Modal>
-    );
-};
 
 export const ListsTabs = ({ route, navigation }) => {
     const { allLists } = useContext(ListsContext);
@@ -116,32 +23,6 @@ export const ListsTabs = ({ route, navigation }) => {
     const [modalChangeVisible, setModalChangeVisible] = useState(false);
     const [isRenaming, setIsRenaming] = useState(false); // to not show the process of adding and deleting a list
 
-    // change header
-    useEffect(() => {
-        navigation.setOptions({
-            headerStyle: {
-                backgroundColor: theme.header
-            },
-            headerLeft: () => (
-                <TouchableOpacity
-                    onPress={() => navigation.popToTop()}
-                    style={{ paddingHorizontal: 15 }}
-                >
-                    <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
-                </TouchableOpacity>
-            ),
-            headerRight: () => (
-                <TouchableOpacity
-                    onPress={() => navigation.navigate("Tasks", { openModal: true })}
-                    style={{ paddingHorizontal: 15, alignItems: "center", marginTop: 5 }}
-                >
-                    <AntDesign name="plus" size={26} color="#FFFFFF" />
-                    <Text style={{ fontSize: 10, color: "#FFFFFF", fontFamily: "monospace" }}>Add List</Text>
-                </TouchableOpacity>
-            ),
-        });
-    }, [theme, navigation]);
-
     // params from App.js where the header is set
     useEffect(() => {
         if (route.params?.openModal) {
@@ -149,12 +30,6 @@ export const ListsTabs = ({ route, navigation }) => {
             navigation.setParams({ openModal: false })
         }
     }, [route.params]);
-
-    // change status bar
-    useEffect(() => {
-        StatusBar.setBackgroundColor(theme.header);
-        StatusBar.setBarStyle("light-content");
-    }, [theme]);
 
     const renameList = async () => {
         if (newListName.trim() !== "") {
@@ -174,7 +49,7 @@ export const ListsTabs = ({ route, navigation }) => {
 
     return (
         <View style={{ flex: 1 }}>
-            <ChangeDeleteModal
+            <ChangeDeleteList
                 modalChangeVisible={modalChangeVisible}
                 setModalChangeVisible={setModalChangeVisible}
                 selectedListName={selectedListName}
@@ -184,7 +59,7 @@ export const ListsTabs = ({ route, navigation }) => {
                 isRenaming={isRenaming}
             />
 
-            <ListModal
+            <AddList
                 modalVisible={modalVisible}
                 setModalVisible={setModalVisible}
                 listName={listName}
