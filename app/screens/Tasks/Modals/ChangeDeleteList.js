@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import { View, Text, Modal, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator } from "react-native";
-import { deleteList } from "../TasksDB";
+import { deleteList } from "../../../contexts/TasksDB";
 import { AntDesign } from "@expo/vector-icons";
 import { ThemeContext } from "../../../contexts/ThemeContext";
 

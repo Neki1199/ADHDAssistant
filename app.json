@@ -26,7 +26,6 @@
     "android": {
       "softwareKeyboardLayoutMode": "pan",
       "package": "com.castillo.adhdassistant",
-      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logoADHD.png",
         "backgroundColor": "#ffffff"

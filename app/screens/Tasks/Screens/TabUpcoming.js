@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useRef, useMemo, useCallback } from 'react';
 import { View, StyleSheet, Text, FlatList, ScrollView, Image, TouchableOpacity, ActivityIndicator, SafeAreaView } from 'react-native';
-import { getUncompletedMonth } from '../TasksDB';
+import { getUncompletedMonth } from '../../../contexts/TasksDB';
 import { ListsContext } from "../../../contexts/ListsContext";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Calendar } from "react-native-calendars";
@@ -23,9 +23,8 @@ const ListUpcoming = ({ navigation }) => {
     const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
     const [currentMonth, setCurrentMonth] = useState(dayjs().format("YYYY-MM"));
     const [calendarKey, setCalendarKey] = useState(0);
-    const [loading, setLoading] = useState(false); //loading when a list is deleted (if not it will get the screen white)
 
-    const markedDates = useRef({});
+    const markedDates = useRef({}); // use same dots if no changes
     const cachedData = useRef({}); // use same data if there is no change
 
     const colours = ["#CC0000", "#FF8000", "#FFD546", "#66CC00", "#0080FF", "#7F00FF", "#3399FF", "#F253A3"]
@@ -43,24 +42,10 @@ const ListUpcoming = ({ navigation }) => {
         setCalendarKey((prev) => prev + 1);
     }, [theme]);
 
-    // when a list is deleted and currently in upcoming, it gets blank
-    // set timer to not show blank
-    useEffect(() => {
-        setLoading(true);
-        const timer = setTimeout(() => setLoading(false), 500); // delay to set false
-
-        // Recalculate tasks
-        const [year, month] = currentMonth.split("-");
-        getMonthTasks(month, year);
-
-        return () => clearTimeout(timer);
-    }, [allLists]);
-
     const getMonthTasks = async (month, year) => {
         const dateCache = `${year}-${month}`;
-
+        // use ref data if there is
         if (cachedData.current[dateCache]) {
-            // use ref data
             setTasks(cachedData.current[dateCache]);
             return;
         }
@@ -71,17 +56,21 @@ const ListUpcoming = ({ navigation }) => {
             const unsuscribeAll = [];
 
             // get all tasks from each list
-            lists.forEach(eachList => {
-                const unsuscribe = getUncompletedMonth(eachList.id, year, month, (resultTasks) => {
-                    setTasks(prevTasks => {
-                        const newTasks = { ...prevTasks, [eachList.id]: resultTasks };
-                        cachedData.current[dateCache] = newTasks; // store on ref
-                        return newTasks;
+            const getAllTasks = lists.map(eachList =>
+                new Promise((resolve) => {
+                    const unsuscribe = getUncompletedMonth(eachList.id, year, month, (resultTasks) => {
+                        setTasks(prevTasks => {
+                            const newTasks = { ...prevTasks, [eachList.id]: resultTasks };
+                            cachedData.current[dateCache] = newTasks; // store on ref
+                            return newTasks;
+                        });
+                        resolve();
                     });
-                });
-                unsuscribeAll.push(unsuscribe); // add all unsuscribe
-            });
+                    unsuscribeAll.push(unsuscribe); // add all unsuscribe
+                })
+            );
 
+            await Promise.all(getAllTasks); // wait for all tasks to be retrieved
             // clean up
             return () => {
                 unsuscribeAll.forEach(unsuscribe => {
@@ -99,7 +88,12 @@ const ListUpcoming = ({ navigation }) => {
     useEffect(() => {
         const [year, month] = currentMonth.split("-");
         getMonthTasks(month, year);
-    }, [currentMonth, tasks]);
+    }, [currentMonth]);
+
+    // recalculate marked dates when tasks change
+    useEffect(() => {
+        markedDates.current = getMarkedDates;
+    }, [tasks]);
 
     // set tasks to show on flatlist
     useEffect(() => {
@@ -143,9 +137,16 @@ const ListUpcoming = ({ navigation }) => {
         setCurrentMonth(`${month.year}-${String(month.month).padStart(2, "0")}`); // only get YYYY-MM
     };
 
-    // make dots for dates
+    // make dots for dates and empty dates [] for the loading to work
     const getMarkedDates = useMemo(() => {
         const dates = {};
+        const [year, month] = currentMonth.split("-");
+        const daysMonth = dayjs(`${year}-${month}`).daysInMonth(); // get all days in the month
+        // add empty days
+        for (let day = 1; day <= daysMonth; day++) {
+            const date = `${year}-${month}-${day}`;
+            dates[date] = { dots: [] };
+        }
 
         Object.entries(tasks).forEach(([listName, taskList]) => {
             taskList.forEach(task => {
@@ -164,129 +165,121 @@ const ListUpcoming = ({ navigation }) => {
             });
         });
         return dates;
-    }, [tasks]);
+    }, [tasks, currentMonth]);
 
     return (
-        <SafeAreaView style={styles.container}>
-            <LinearGradient
-                colors={[theme.header, theme.linear2]}
-                style={styles.gradient}>
-                {loading ? (
-                    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                        <ActivityIndicator size={"large"} color={theme.tabText} />
-                    </View>
-                ) : (
-                    <ScrollView
-                        contentContainerStyle={styles.scrollViewContent}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        <View style={styles.containerCalendar}>
-                            {showCalendar ? (
-                                <Calendar
-                                    key={calendarKey}
-                                    firstDay={1}
-                                    markedDates={{
-                                        ...markedDates.current,
-                                        [selectedDate]: {
-                                            ...markedDates.current[selectedDate],
-                                            selected: true
-                                        }
-                                    }}
-                                    markingType="multi-dot"
-                                    onDayPress={(day) => dayPress(day.dateString)}
-                                    onMonthChange={(month) => onMonthChange(month)}
-                                    hideExtraDays={true}
-                                    theme={{
-                                        calendarBackground: theme.container,
-                                        todayBackgroundColor: "#4B4697",
-                                        todayTextColor: "#FFFFFF",
-                                        textSectionTitleColor: "#B6C1CD",
-                                        arrowColor: theme.tabText,
-                                        selectedDayBackgroundColor: "#847FC7",
-                                        monthTextColor: theme.tabText,
-                                        dayTextColor: theme.text,
-                                        textDayFontFamily: "monospace",
-                                        textMonthFontFamily: "Zain-Regular",
-                                        textDayHeaderFontFamily: "Zain-Regular",
-                                        textDayFontSize: 14,
-                                        textMonthFontSize: 20,
-                                        textDayHeaderFontSize: 14
-                                    }}
-                                />
-                            ) : (
-                                <Text style={styles.selectedDate}>{dayjs(selectedDate).format("DD MMMM YYYY")}</Text>
-                            )}
-                            <TouchableOpacity style={{ alignItems: "center" }} onPress={changeShowCalendar}>
-                                <AntDesign name="minus" size={40} color={theme.name === "light" ? "#4B4697" : "#FFFfff"} />
-                            </TouchableOpacity>
-                        </View>
+        <LinearGradient
+            colors={[theme.header, theme.linear2]}
+            style={styles.gradient}>
 
-                        {/* flatlist showing tasks without date and selected date tasks */}
-                        <View style={styles.tasksContainer}>
-                            {/* no due date tasks */}
-                            {/* hide or show no due date tasks */}
-                            <View style={styles.touchShowComplete}>
-                                <Text style={styles.sectionTitle}>Tasks without date</Text>
-                                <TouchableOpacity onPress={changeShowDue} style={{ flexDirection: "row" }}>
-                                    {undatedTasks.length > 0 && (
-                                        <View style={styles.number}>
-                                            <Text style={{ fontSize: 12, color: theme.text }}>
-                                                {undatedTasks.length}
-                                            </Text>
-                                        </View>
-                                    )}
-                                    <AntDesign style={{ right: 10 }} name={showNoDueDate ? "up" : "down"} size={22} color={theme.name === "light" ? "#404040" : "#FFFFFF"} />
-                                </TouchableOpacity>
-                            </View>
-
-                            {showNoDueDate && (
-                                <FlatList
-                                    style={styles.flatlist}
-                                    data={undatedTasks}
-                                    keyExtractor={item => `${item.name}-${item.date}`}
-                                    renderItem={({ item }) => (
-                                        <TaskItem item={item} navigation={navigation} colour={listColours[item.list]} />
-                                    )}
-                                    scrollEnabled={false}
-                                    ListEmptyComponent={
-                                        <Image
-                                            source={require("../../../../assets/images/empty.png")}
-                                            style={[styles.img, { width: 250, height: 200 }]} />
-                                    }
-                                />
-                            )}
-
-                            <View style={styles.touchShowComplete}>
-                                <Text style={styles.sectionTitle}>Tasks for {dayjs(selectedDate).format("dddd MMM YYYY")}</Text>
-                            </View>
-
-                            <FlatList
-                                style={styles.flatlist}
-                                data={selectedDateTasks}
-                                keyExtractor={item => `${item.name}-${item.date}`}
-                                renderItem={({ item }) => (
-                                    <TaskItem item={item} navigation={navigation} colour={listColours[item.list]} />
-                                )}
-                                ListEmptyComponent={
-                                    <Image
-                                        source={require("../../../../assets/images/tasksCompleted.png")} // cambiar a vacio imagen
-                                        style={styles.img} />
+            <ScrollView
+                contentContainerStyle={styles.scrollViewContent}
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={styles.containerCalendar}>
+                    {showCalendar ? (
+                        <Calendar
+                            key={calendarKey}
+                            firstDay={1}
+                            displayLoadingIndicator={true}
+                            markedDates={{
+                                ...markedDates.current,
+                                [selectedDate]: {
+                                    ...markedDates.current[selectedDate],
+                                    selected: true
                                 }
-                                scrollEnabled={false}
-                            />
-                        </View>
-                    </ScrollView>
-                )}
-            </LinearGradient>
-        </SafeAreaView>
+                            }}
+                            markingType="multi-dot"
+                            onDayPress={(day) => dayPress(day.dateString)}
+                            onMonthChange={(month) => onMonthChange(month)}
+                            hideExtraDays={true}
+                            theme={{
+                                calendarBackground: theme.container,
+                                todayBackgroundColor: "#4B4697",
+                                todayTextColor: "#FFFFFF",
+                                textSectionTitleColor: "#B6C1CD",
+                                arrowColor: theme.tabText,
+                                selectedDayBackgroundColor: "#847FC7",
+                                monthTextColor: theme.tabText,
+                                dayTextColor: theme.text,
+                                textDayFontFamily: "monospace",
+                                textMonthFontFamily: "Zain-Regular",
+                                textDayHeaderFontFamily: "Zain-Regular",
+                                textDayFontSize: 14,
+                                textMonthFontSize: 20,
+                                textDayHeaderFontSize: 14
+                            }}
+                        />
+                    ) : (
+                        <Text style={styles.selectedDate}>{dayjs(selectedDate).format("DD MMMM YYYY")}</Text>
+                    )}
+                    <TouchableOpacity style={{ alignItems: "center" }} onPress={changeShowCalendar}>
+                        <AntDesign name="minus" size={40} color={theme.name === "light" ? "#4B4697" : "#FFFfff"} />
+                    </TouchableOpacity>
+                </View>
+
+
+                {/* flatlist showing tasks without date and selected date tasks */}
+                <View style={styles.tasksContainer}>
+                    {/* no due date tasks */}
+                    {/* hide or show no due date tasks */}
+                    <View style={styles.touchShowComplete}>
+                        <Text style={styles.sectionTitle}>Tasks without date</Text>
+                        <TouchableOpacity onPress={changeShowDue} style={{ flexDirection: "row" }}>
+                            {undatedTasks.length > 0 && (
+                                <View style={styles.number}>
+                                    <Text style={{ fontSize: 12, color: theme.text }}>
+                                        {undatedTasks.length}
+                                    </Text>
+                                </View>
+                            )}
+                            <AntDesign style={{ right: 10 }} name={showNoDueDate ? "up" : "down"} size={22} color={theme.name === "light" ? "#404040" : "#FFFFFF"} />
+                        </TouchableOpacity>
+                    </View>
+
+                    {showNoDueDate && (
+                        <FlatList
+                            style={styles.flatlist}
+                            data={undatedTasks}
+                            keyExtractor={item => `${item.name}-${item.date}`}
+                            renderItem={({ item }) => (
+                                <TaskItem item={item} navigation={navigation} colour={listColours[item.list]} />
+                            )}
+                            scrollEnabled={false}
+                            ListEmptyComponent={
+                                <Image
+                                    source={require("../../../../assets/images/empty.png")}
+                                    style={[styles.img, { width: 250, height: 200 }]} />
+                            }
+                        />
+                    )}
+
+                    <View style={styles.touchShowComplete}>
+                        <Text style={styles.sectionTitle}>Tasks for {dayjs(selectedDate).format("dddd MMM YYYY")}</Text>
+                    </View>
+
+                    <FlatList
+                        style={styles.flatlist}
+                        data={selectedDateTasks}
+                        keyExtractor={item => `${item.name}-${item.date}`}
+                        renderItem={({ item }) => (
+                            <TaskItem item={item} navigation={navigation} colour={listColours[item.list]} />
+                        )}
+                        ListEmptyComponent={
+                            <Image
+                                source={require("../../../../assets/images/tasksCompleted.png")} // cambiar a vacio imagen
+                                style={styles.img} />
+                        }
+                        scrollEnabled={false}
+                    />
+                </View>
+            </ScrollView>
+        </LinearGradient>
     );
 };
 
 
 const useStyles = (theme) => StyleSheet.create({
-    container: {
-        flex: 1
-    },
     gradient: {
         flex: 1,
         justifyContent: "center"

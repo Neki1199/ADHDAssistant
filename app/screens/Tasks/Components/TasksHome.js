@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { getProgress } from "../TasksDB"
+import { getProgress } from "../../../contexts/TasksDB"
 import { CircularProgress } from 'react-native-circular-progress';
 import { ListsContext } from "../../../contexts/ListsContext";
 import { ThemeContext } from '../../../contexts/ThemeContext';
@@ -103,7 +103,12 @@ const useStyles = (theme) => StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: "center",
-    padding: 10
+    padding: 10,
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
   },
   textTasks: {
     fontFamily: "Zain-Regular",
@@ -129,6 +134,11 @@ const useStyles = (theme) => StyleSheet.create({
     width: 120,
     height: 40,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
   }
 });

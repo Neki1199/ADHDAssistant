@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
-import { View, Alert, StyleSheet, Dimensions } from "react-native";
+import { Alert, Dimensions } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-import { changeList } from "../screens/Tasks/TasksDB";
+import { changeList } from "../contexts/TasksDB";
 import ListTasks from "../screens/Tasks/Screens/TabLists";
 import ListUpcoming from "../screens/Tasks/Screens/TabUpcoming";
 import { ListsContext } from "../contexts/ListsContext";
@@ -48,7 +48,7 @@ export const ListsTabs = ({ route, navigation }) => {
     };
 
     return (
-        <View style={{ flex: 1 }}>
+        <>
             <ChangeDeleteList
                 modalChangeVisible={modalChangeVisible}
                 setModalChangeVisible={setModalChangeVisible}
@@ -120,58 +120,6 @@ export const ListsTabs = ({ route, navigation }) => {
                     initialParams={{ listID: "Upcoming" }}
                 />
             </Tab.Navigator>
-        </View>
+        </>
     );
-}
-
-const useStyles = (theme) => StyleSheet.create({
-    modalContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "rgba(0, 0, 0, 0.8)"
-    },
-    modalInside: {
-        width: "90%",
-        padding: 20,
-        backgroundColor: theme.container,
-        borderRadius: 10,
-        alignItems: "center"
-    },
-    modalTitle: {
-        fontFamily: "Zain-Regular",
-        fontSize: 25,
-        marginBottom: 10,
-        color: theme.tabText
-    },
-    topModal: {
-        flexDirection: "row",
-        width: "100%",
-        justifyContent: "space-between"
-    },
-    input: {
-        color: theme.text,
-        fontFamily: "Zain-Regular",
-        fontSize: 20,
-        width: "90%",
-        backgroundColor: theme.input,
-        borderRadius: 20,
-        padding: 20,
-    },
-    textModalCancel: {
-        fontFamily: "Zain-Regular",
-        fontSize: 20,
-        color: "#FFFFFF",
-        textAlign: "center",
-        justifyContent: "center"
-    },
-    btnDelete: {
-        margin: 20,
-        width: 40,
-        height: 40,
-        backgroundColor: theme.delete,
-        borderRadius: 20,
-        justifyContent: "center",
-        alignItems: "center"
-    }
-});
+};

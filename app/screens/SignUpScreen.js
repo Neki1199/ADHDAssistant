@@ -1,10 +1,10 @@
-import { Text, SafeAreaView, TouchableOpacity, Alert, StyleSheet, Image } from 'react-native';
-import React, { useEffect, useState } from 'react';
-import { auth, db } from '../../firebaseConfig';
-import { updateProfile, createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
-import { TextInput } from 'react-native-gesture-handler';
-import { setDoc, doc } from 'firebase/firestore';
-import { addNewList } from "./Tasks/TasksDB";
+import { Text, View, TouchableOpacity, Alert, StyleSheet, Image } from "react-native";
+import React, { useState } from "react";
+import { auth, db } from "../../firebaseConfig";
+import { updateProfile, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { TextInput } from "react-native-gesture-handler";
+import { setDoc, doc } from "firebase/firestore";
+import { addNewList } from "../contexts/TasksDB";
 
 export default function SignUpScreen({ navigation }) {
   const [name, setName] = useState("");
@@ -52,7 +52,6 @@ export default function SignUpScreen({ navigation }) {
         Total: 0
       });
       await addNewList("Daily");
-      await addNewList("Upcoming");
 
       // go to sign in screen after success sign up
       if (userCredential) navigation.navigate("SignIn");
@@ -81,7 +80,11 @@ export default function SignUpScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <Image
+        source={require("../../assets/images/logoADHD.png")}
+        style={styles.img} />
+
       <Text style={styles.title}>Create Account</Text>
       <TextInput
         style={styles.input}
@@ -102,51 +105,55 @@ export default function SignUpScreen({ navigation }) {
       <TouchableOpacity style={[styles.button, styles.btnCreate]} onPress={signUp}>
         <Text style={styles.btnText}>Create Account</Text>
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 20,
-    backgroundColor: '#FFFFFF'
+    justifyContent: "flex-start",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF"
   },
   title: {
     fontSize: 40,
     marginBottom: 40,
-    fontWeight: '800',
-    color: '#4B4697'
+    fontWeight: "800",
+    color: "#4B4697"
   },
   input: {
-    width: '90%',
+    width: "90%",
     height: 60,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: "#F0F0F0",
     borderRadius: 20,
     marginBottom: 10,
     padding: 20
   },
   button: {
-    width: '90%',
-    alignItems: 'center',
+    width: "90%",
+    alignItems: "center",
     padding: 20,
     fontSize: 18,
     marginVertical: 10,
     borderRadius: 30,
-    shadowColor: '#5C6BC0',
+    shadowColor: "#5C6BC0",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 5,
     elevation: 5
   },
   btnCreate: {
-    backgroundColor: '#6D67BD',
+    backgroundColor: "#6D67BD",
   },
   btnText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: '600'
+    fontWeight: "600"
+  },
+  img: {
+    width: "100%",
+    height: "41%",
+    marginBottom: 20
   }
 });

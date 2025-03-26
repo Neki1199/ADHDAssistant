@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { View, StyleSheet, Switch, TouchableOpacity, SafeAreaView, Image } from "react-native";
+import { View, StyleSheet, Switch, TouchableOpacity, Image } from "react-native";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebaseConfig";
 import { createDrawerNavigator, DrawerItemList, DrawerItem } from "@react-navigation/drawer";

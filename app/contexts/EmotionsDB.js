@@ -1,5 +1,5 @@
 import { Alert } from 'react-native';
-import { db, auth } from "../../../firebaseConfig";
+import { db, auth } from "../../firebaseConfig";
 import {
     collection, query, where,
     onSnapshot

@@ -1,14 +1,14 @@
 import * as SystemUI from "expo-system-ui";
 import React, { useContext, useEffect } from "react";
-import { StyleSheet, SafeAreaView, StatusBar, View, Text, TouchableOpacity, Image } from "react-native";
-import EmotionsHome from "../screens/Emotions/EmotionsScreen";
-import TasksHome from "../screens/Tasks/Components/TasksHomeScreen"
+import { StyleSheet, View, Text, TouchableOpacity, Image } from "react-native";
+import EmotionsHome from "../screens/Emotions/Components/EmotionsHome";
+import TasksHome from "../screens/Tasks/Components/TasksHome"
 import { LinearGradient } from "expo-linear-gradient";
 import { ThemeContext } from "../contexts/ThemeContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
-import { getDatesRepeat } from "./Tasks/Modals/ModalNewTask";
-import { addTask } from "./Tasks/TasksDB";
+import { getDatesRepeat, storeLastRepeat } from "./Tasks/Modals/ModalNewTask";
+import { addTask } from "../contexts/TasksDB";
 import { scheduleNotification } from "./Tasks/Components/Notifications";
 
 export default function HomeScreen({ navigation }) {
@@ -100,16 +100,18 @@ export default function HomeScreen({ navigation }) {
         <EmotionsHome />
         <TasksHome navigation={navigation} />
 
-        <TouchableOpacity onPress={() => navigation.navigate("Help")}>
-          <View style={styles.containerInside}>
-            <Text style={styles.text}>Tasks Help Kit</Text>
+        <View style={styles.containerInside}>
+          <TouchableOpacity onPress={() => navigation.navigate("Help")} style={[styles.btn,
+          { backgroundColor: theme.name === "light" ? "rgba(255, 255, 255, 0.6)" : "rgba(255, 255, 255, 0.1)" }
+          ]}>
+            <Text style={styles.text}>Tasks Help</Text>
             <Image
-              source={require("../../assets/images/addTask.png")}
+              source={require("../../assets/images/help.png")}
               style={styles.img} />
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
-    </View>
+    </View >
 
   );
 };
@@ -126,24 +128,29 @@ const useStyles = (theme) => StyleSheet.create({
     gap: 30
   },
   containerInside: {
-    backgroundColor: theme.container,
-    width: 350,
-    borderRadius: 10,
-    alignItems: "center",
+    flex: 1,
+    padding: 10,
+    width: "90%",
     justifyContent: "center",
-    padding: 20
+    alignContent: "flex-start",
+    bottom: 50
+  },
+  btn: {
+    borderRadius: 100,
+    alignItems: "center",
+    width: 160,
+    padding: 15,
+
   },
   text: {
     color: theme.tabText,
     fontFamily: "Zain-Regular",
-    fontSize: 25
+    fontSize: 20,
+    textAlign: "center"
   },
   img: {
     width: 100,
     height: 100,
-    borderRadius: 50,
-    borderWidth: 3,
-    marginTop: 10,
-    borderColor: "#FFFFFF"
+    marginTop: 5,
   }
 });

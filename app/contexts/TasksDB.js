@@ -1,11 +1,12 @@
 import { Alert } from 'react-native';
-import { db, auth } from "../../../firebaseConfig";
+import { db, auth } from "../../firebaseConfig";
 import {
     doc, updateDoc, getDocs, increment,
     collection, query, where,
     onSnapshot, getDoc, setDoc, deleteDoc,
     deleteField, writeBatch
 } from '@firebase/firestore';
+import { scheduleNotification } from '../screens/Tasks/Components/Notifications';
 import dayjs from 'dayjs';
 
 // add a new task to a specific list
@@ -28,6 +29,48 @@ export const addTask = async (name, date, time, reminder, repeat, duration, comp
             "Error adding new task",
             [{ text: "Try Again", style: "default" }]
         );
+    }
+};
+
+export const addRepeatedTasks = async (datesRepeat, task) => {
+    const userID = auth.currentUser?.uid;
+    if (!userID) return;
+
+    try {
+        const batch = writeBatch(db); //create a batch, so its faster to add repeated tasks
+        const repeated = [];
+        datesRepeat.forEach((dateRepeat) => {
+            // add repeated tasks, but if starts is == to task date, do not add (to not create same task twice)
+            if (dateRepeat !== task.date) {
+                const taskRef = doc(collection(db, "users", userID, "todoLists", task.list, "Tasks"));
+                const newData = {
+                    id: taskRef.id,
+                    name: task.name,
+                    date: dateRepeat,
+                    time: task.time,
+                    reminder: task.reminder,
+                    repeat: task.repeat,
+                    duration: task.duration,
+                    completed: false,
+                    list: task.list,
+                    completedDate: "",
+                    parentID: task.id
+                }
+                batch.set(taskRef, newData);
+                repeated.push(newData);
+            }
+        });
+        await batch.commit();
+        for (const repeatTask of repeated) {
+            // add notification
+            if (repeatTask.reminder && repeatTask.date) {
+                const reminderTime = dayjs(`${repeatTask.date} ${repeatTask.reminder}`, "YYYY-MM-DD HH:mm").toDate();
+                scheduleNotification(reminderTime, `Remember your task "${repeatTask.name}". Starts at ${repeatTask.reminder}`, task.id, repeatTask.id);
+            }
+        }
+        return repeated;
+    } catch (error) {
+        console.log("Error adding repeated tasks: ", error);
     }
 };
 
@@ -422,22 +465,39 @@ export const getProgress = (listID, setProgress) => {
     });
 };
 
+export const getTasksProgress = async (setProgress) => {
+    const userID = auth.currentUser?.uid;
+    if (!userID) return;
+
+    const progressRef = doc(db, "users", userID, "otherToDo", "progress");
+
+    const unsuscribe = onSnapshot(progressRef, (progressDoc) => {
+        const progress = progressDoc.data();
+        setProgress(progress);
+    }, (error) => {
+        console.log("Error retrieving tasks progress: ", error)
+    });
+
+    return unsuscribe;
+};
+
 export const deleteRepeatedTasks = async (task) => {
     const userID = auth.currentUser?.uid;
     if (!userID) return;
-    const parentID = task.parentID ? task.parentID : task.id;
 
+    const parentID = task.parentID ? task.parentID : task.id;
     const tasksRef = collection(db, "users", userID, "todoLists", task.list, "Tasks");
     const tasksQuery = query(tasksRef, where("parentID", "==", parentID));
 
     try {
         const resultTasks = await getDocs(tasksQuery);
+        const batch = writeBatch(db);
 
-        const deleteAll = resultTasks.docs.map(async (eachTask) => {
-            await deleteDoc(eachTask.ref);
+        resultTasks.forEach((eachTask) => {
+            batch.delete(eachTask.ref)
         });
 
-        await Promise.all(deleteAll);
+        await batch.commit();
     } catch (error) {
         console.log("Could not delete parentID tasks: ", error)
     }

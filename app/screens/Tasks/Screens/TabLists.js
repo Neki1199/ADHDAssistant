@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, StyleSheet, Text, ActivityIndicator, FlatList, ScrollView, SafeAreaView, TouchableOpacity, Image, Modal, TouchableWithoutFeedback } from 'react-native';
-import { getTasks, deleteAllCompleted } from '../TasksDB';
+import { View, StyleSheet, Text, ActivityIndicator, FlatList, ScrollView, TouchableOpacity, Image, Modal, TouchableWithoutFeedback } from 'react-native';
+import { getTasks, deleteAllCompleted } from '../../../contexts/TasksDB';
 import { LinearGradient } from 'expo-linear-gradient';
 import ModalNewTask from "../Modals/ModalNewTask";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -107,134 +107,129 @@ const ListTasks = ({ route, navigation }) => {
     const dailyBeforeEqual = filteredTasks.uncompleted.filter(task => task.date <= currentDay);
 
     return (
-        <SafeAreaView style={styles.container}>
-            <LinearGradient
-                colors={[theme.header, theme.linear2]}
-                style={styles.gradient}>
-                <ScrollView
-                    contentContainerStyle={styles.scrollViewContent}
-                    showsVerticalScrollIndicator={false}>
+        <LinearGradient
+            colors={[theme.header, theme.linear2]}
+            style={styles.gradient}>
+            <ScrollView
+                contentContainerStyle={styles.scrollViewContent}
+                showsVerticalScrollIndicator={false}>
 
-                    <View style={styles.tasksContainer}>
-                        {/* uncompleted tasks */}
-                        <View style={styles.touchShowComplete}>
-                            <Text style={styles.sectionTitle}>Uncompleted Tasks</Text>
-                            <TouchableOpacity
-                                onPress={() => setModalDeleteAll(true)}
-                                disabled={filteredTasks.completed.length === 0}
-                                style={{ flexDirection: "row" }}
-                            >
-                                {dailyBeforeEqual.length > 0 && (
-                                    <View style={styles.number}>
-                                        <Text style={{ fontSize: 12, color: theme.text }}>
-                                            {dailyBeforeEqual.length}
-                                        </Text>
-                                    </View>
-                                )}
-                                <AntDesign style={{ right: 10 }} name="ellipsis1" size={25}
-                                    color={
-                                        filteredTasks.completed.length > 0 ? (theme.name === "light" ? "#404040" : "#FFFFFF") : (theme.name === "light" ? "#E0E0E0" : "#606060")
-                                    } />
-                            </TouchableOpacity>
-                        </View>
-                        {loading ? (
-                            <ActivityIndicator size="large" color="#7D79C0" />
-                        ) : (
-                            // uncompleted tasks
-                            <FlatList
-                                style={styles.flatlist}
-                                data={dailyBeforeEqual}
-                                keyExtractor={item => `${item.id}-${item.date}`}
-                                renderItem={({ item }) => (
-                                    <TaskItem item={item} navigation={navigation} />
-                                )}
-                                scrollEnabled={false}
-                                ListEmptyComponent={
-                                    //  incompleted tasks
-                                    dailyAllTasksCompleted ? (
-                                        // image all completed!
-                                        <Image
-                                            source={require("../../../../assets/images/completed.png")}
-                                            style={styles.img} />
-                                    ) : (
-                                        // image user has not added a task yet
-                                        <Image
-                                            source={require("../../../../assets/images/addTask.png")}
-                                            style={styles.img} />
-                                    )
-                                }
-                            />
-                        )}
-
-                        {/* hide or show completed tasks */}
-                        <View style={styles.touchShowComplete}>
-                            <Text style={styles.sectionTitle}>Completed Tasks</Text>
-                            <TouchableOpacity onPress={changeShowComplete} style={{ flexDirection: "row" }}>
-                                {filteredTasks.completed.length > 0 && (
-                                    <View style={styles.number}>
-                                        <Text style={{ fontSize: 12, color: theme.text }}>
-                                            {filteredTasks.completed.length}
-                                        </Text>
-                                    </View>
-                                )}
-                                <AntDesign style={{ right: 10 }} name={showCompleted ? "up" : "down"} size={22} color={theme.name === "light" ? "#404040" : "#FFFFFF"} />
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* completed tasks */}
-                        {showCompleted && (
-                            <FlatList
-                                style={styles.flatlist}
-                                data={filteredTasks.completed}
-                                keyExtractor={item => `${item.id}-${item.date}`}
-                                renderItem={({ item }) => (
-                                    <TaskItem item={item} navigation={navigation} />
-                                )}
-                                scrollEnabled={false}
-                                ListEmptyComponent={
-                                    <Image
-                                        source={require("../../../../assets/images/tasksCompleted.png")}
-                                        style={styles.img} />
-                                }
-                            />
-                        )}
+                <View style={styles.tasksContainer}>
+                    {/* uncompleted tasks */}
+                    <View style={styles.touchShowComplete}>
+                        <Text style={styles.sectionTitle}>Uncompleted Tasks</Text>
+                        <TouchableOpacity
+                            onPress={() => setModalDeleteAll(true)}
+                            disabled={filteredTasks.completed.length === 0}
+                            style={{ flexDirection: "row" }}
+                        >
+                            {dailyBeforeEqual.length > 0 && (
+                                <View style={styles.number}>
+                                    <Text style={{ fontSize: 12, color: theme.text }}>
+                                        {dailyBeforeEqual.length}
+                                    </Text>
+                                </View>
+                            )}
+                            <AntDesign style={{ right: 10 }} name="ellipsis1" size={25}
+                                color={
+                                    filteredTasks.completed.length > 0 ? (theme.name === "light" ? "#404040" : "#FFFFFF") : (theme.name === "light" ? "#E0E0E0" : "#606060")
+                                } />
+                        </TouchableOpacity>
                     </View>
-                </ScrollView >
+                    {loading ? (
+                        <ActivityIndicator size="large" color="#7D79C0" />
+                    ) : (
+                        // uncompleted tasks
+                        <FlatList
+                            style={styles.flatlist}
+                            data={dailyBeforeEqual}
+                            keyExtractor={item => `${item.id}-${item.date}`}
+                            renderItem={({ item }) => (
+                                <TaskItem item={item} navigation={navigation} />
+                            )}
+                            scrollEnabled={false}
+                            ListEmptyComponent={
+                                //  incompleted tasks
+                                dailyAllTasksCompleted ? (
+                                    // image all completed!
+                                    <Image
+                                        source={require("../../../../assets/images/completed.png")}
+                                        style={styles.img} />
+                                ) : (
+                                    // image user has not added a task yet
+                                    <Image
+                                        source={require("../../../../assets/images/addTask.png")}
+                                        style={styles.img} />
+                                )
+                            }
+                        />
+                    )}
 
-                {/* modal view add new task btn*/}
-                <TouchableOpacity
-                    style={[styles.addTaskButton]}
-                    onPress={() => setModalVisible(true)}>
-                    <AntDesign name="plus" size={22} color="#FFFFFF" />
-                </TouchableOpacity>
+                    {/* hide or show completed tasks */}
+                    <View style={styles.touchShowComplete}>
+                        <Text style={styles.sectionTitle}>Completed Tasks</Text>
+                        <TouchableOpacity onPress={changeShowComplete} style={{ flexDirection: "row" }}>
+                            {filteredTasks.completed.length > 0 && (
+                                <View style={styles.number}>
+                                    <Text style={{ fontSize: 12, color: theme.text }}>
+                                        {filteredTasks.completed.length}
+                                    </Text>
+                                </View>
+                            )}
+                            <AntDesign style={{ right: 10 }} name={showCompleted ? "up" : "down"} size={22} color={theme.name === "light" ? "#404040" : "#FFFFFF"} />
+                        </TouchableOpacity>
+                    </View>
 
-                {/* random button */}
-                <TouchableOpacity
-                    style={[styles.pickRandomButton,
-                    { opacity: filteredTasks.pastAndCurrent.filter(task => !task.completed).length > 1 ? 1 : 0.5 }]}
-                    disabled={filteredTasks.pastAndCurrent.filter(task => !task.completed).length <= 1}
-                    onPress={() => setModalStart(true)}>
-                    <Image
-                        source={require("../../../../assets/images/dice.png")}
-                        style={styles.imgRandom} />
-                </TouchableOpacity>
+                    {/* completed tasks */}
+                    {showCompleted && (
+                        <FlatList
+                            style={styles.flatlist}
+                            data={filteredTasks.completed}
+                            keyExtractor={item => `${item.id}-${item.date}`}
+                            renderItem={({ item }) => (
+                                <TaskItem item={item} navigation={navigation} />
+                            )}
+                            scrollEnabled={false}
+                            ListEmptyComponent={
+                                <Image
+                                    source={require("../../../../assets/images/tasksCompleted.png")}
+                                    style={styles.img} />
+                            }
+                        />
+                    )}
+                </View>
+            </ScrollView >
 
-                <ModalNewTask modalVisible={modalVisible} setModalVisible={setModalVisible}
-                    list={listID} task={null} />
+            {/* modal view add new task btn*/}
+            <TouchableOpacity
+                style={[styles.addTaskButton]}
+                onPress={() => setModalVisible(true)}>
+                <AntDesign name="plus" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
 
-                <ModalStart tasks={listID === "Daily" ? filteredTasks.pastAndCurrent.filter(task => !task.completed)
-                    : filteredTasks.uncompleted} modalStart={modalStart} setModalStart={setModalStart} navigation={navigation} />
+            {/* random button */}
+            <TouchableOpacity
+                style={[styles.pickRandomButton,
+                { opacity: filteredTasks.pastAndCurrent.filter(task => !task.completed).length > 1 ? 1 : 0.5 }]}
+                disabled={filteredTasks.pastAndCurrent.filter(task => !task.completed).length <= 1}
+                onPress={() => setModalStart(true)}>
+                <Image
+                    source={require("../../../../assets/images/dice.png")}
+                    style={styles.imgRandom} />
+            </TouchableOpacity>
 
-            </LinearGradient >
+            <ModalNewTask modalVisible={modalVisible} setModalVisible={setModalVisible}
+                list={listID} task={null} />
+
+            <ModalStart tasks={listID === "Daily" ? filteredTasks.pastAndCurrent.filter(task => !task.completed)
+                : filteredTasks.uncompleted} modalStart={modalStart} setModalStart={setModalStart} navigation={navigation} />
+
             {deleteAllCompletedModal()}
-        </SafeAreaView>
+        </LinearGradient >
     );
 };
 
 const useStyles = (theme) => StyleSheet.create({
-    container: {
-        flex: 1
-    },
     gradient: {
         flex: 1,
         justifyContent: "flex-start"

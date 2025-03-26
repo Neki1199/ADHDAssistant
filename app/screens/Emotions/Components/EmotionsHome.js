@@ -1,9 +1,9 @@
 import React, { useContext, useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Alert, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { doc, updateDoc, getDoc, setDoc, arrayUnion } from '@firebase/firestore';
-import { db, auth } from "../../../firebaseConfig";
+import { db, auth } from "../../../../firebaseConfig";
 import dayjs from "dayjs";
-import { ThemeContext } from '../../contexts/ThemeContext';
+import { ThemeContext } from '../../../contexts/ThemeContext';
 
 export default function EmotionsHome() { // home emotions emoji
   const [selectedEmotion, setSelectedEmotion] = useState(null);
@@ -107,7 +107,13 @@ const useStyles = (theme) => StyleSheet.create({
     height: 150,
     borderRadius: 10,
     alignItems: 'center',
-    padding: 10
+    padding: 10,
+
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4
   },
   textEmotions: {
     color: theme.tabText,

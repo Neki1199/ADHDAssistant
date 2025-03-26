@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { setCompleted, setNotCompleted } from '../TasksDB';
+import { setCompleted, setNotCompleted } from '../../../contexts/TasksDB';
 import ModalNewTask from "../Modals/ModalNewTask";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import AntDesign from "react-native-vector-icons/AntDesign";

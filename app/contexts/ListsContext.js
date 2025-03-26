@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useRef } from "react";
-import { getAllLists } from "../screens/Tasks/TasksDB";
+import { getAllLists } from "./TasksDB";
 import { auth } from "../../firebaseConfig";
 
 export const ListsContext = createContext();

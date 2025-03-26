@@ -2,8 +2,8 @@ import React, { useState, useContext, useEffect, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Calendar } from "react-native-calendars";
 import { ThemeContext } from '../../contexts/ThemeContext';
-import EmotionsTabs from "../Emotions/EmotionsTabs";
-import { getEmotionsDB } from './EmotionsDB';
+import EmotionsTabs from "../Emotions/Components/EmotionsTabs";
+import { getEmotionsDB } from '../../contexts/EmotionsDB';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import dayjs from "dayjs";
 
@@ -42,21 +42,17 @@ const EmotionsProgress = () => {
     const [allEmotions, setAllEmotions] = useState({});
     const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
     const [currentMonth, setCurrentMonth] = useState(dayjs().format("YYYY-MM"));
-    const [unsuscribe, setUnsuscribe] = useState(null);
     const { theme } = useContext(ThemeContext);
     const [calendarKey, setCalendarKey] = useState(0); // to re render the calendar when theme canges
 
     // listen for changes in actual month
     useEffect(() => {
-        // stop listening to updates of the previous month when changed (cleanup)
-        if (unsuscribe === typeof ("function")) { unsuscribe() };
         const [year, month] = currentMonth.split("-");
-        const newUnsuscribe = getEmotionsMonth(month, year, setAllEmotions);
 
-        setUnsuscribe(() => newUnsuscribe);  // set the new listening
+        const unsuscribe = getEmotionsMonth(month, year, setAllEmotions);
         // clean up when unmont
         return () => {
-            if (newUnsuscribe && typeof newUnsuscribe === "function") newUnsuscribe();
+            if (unsuscribe && typeof unsuscribe === "function") unsuscribe();
 
         };
     }, [currentMonth]);
@@ -69,6 +65,14 @@ const EmotionsProgress = () => {
     // set style for marked dates
     const markedDates = useMemo(() => {
         const dates = {};
+        const [year, month] = currentMonth.split("-");
+        const daysMonth = dayjs(`${year}-${month}`).daysInMonth(); // get all days in the month
+        // add empty days
+        for (let day = 1; day <= daysMonth; day++) {
+            const date = `${year}-${month}-${day}`;
+            dates[date] = { customStyles: [] };
+        }
+
         Object.keys(allEmotions).forEach(date => {
             if (allEmotions[date] && allEmotions[date].customStyles) {
                 dates[date] = {
@@ -87,6 +91,7 @@ const EmotionsProgress = () => {
                         key={calendarKey}
                         firstDay={1}
                         markingType={"custom"}
+                        displayLoadingIndicator={true}
                         markedDates={{
                             ...markedDates,
                             [selectedDate]: { selected: true, disableTouchEvent: true }

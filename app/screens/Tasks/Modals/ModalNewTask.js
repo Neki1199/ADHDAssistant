@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from "react";
 import { Alert, View, ActivityIndicator, Keyboard, TouchableWithoutFeedback, StyleSheet, Text, TouchableOpacity, Modal, TextInput } from "react-native";
-import { addTask, deleteTask, deleteRepeatedTasks, changeTask } from "../TasksDB"
+import { addTask, deleteTask, deleteRepeatedTasks, changeTask, addRepeatedTasks } from "../../../contexts/TasksDB";
 import { ListsContext } from "../../../contexts/ListsContext";
 import { AntDesign } from "@expo/vector-icons";
 import { TimerPickerModal } from "react-native-timer-picker";
@@ -11,7 +11,6 @@ import TaskDetails from "../Components/TaskDetails";
 import RepeatSelection from "../Components/RepeatSelection";
 import { ThemeContext } from "../../../contexts/ThemeContext";
 import { removeNotification, removeRepeatNotifications, scheduleNotification } from "../Components/Notifications";
-
 
 // get dates from repeat field, date is the starts field in repeat, not date from task
 export const getDatesRepeat = (date, repeat) => {
@@ -39,11 +38,12 @@ export const getDatesRepeat = (date, repeat) => {
         } else if (repeat.type === "Weekly") {
             days.forEach(day => {
                 const dayIndex = dayMap[day]; // get day index
-                // add one more day (so its exact)
+                // add one more day (so its exact, as dayjs starts on sunday)
                 const oneDayMore = currentDate.day(dayIndex).add(1, "day");
-                const dateDay = oneDayMore.format("YYYY-MM-DD");
-                if (dayjs(dateDay).isAfter(startDate) || dayjs(dateDay).isSame(startDate)) {
-                    datesRepeat.push(dateDay);
+
+                if ((oneDayMore.isAfter(startDate) || oneDayMore.isSame(startDate))
+                    && ((oneDayMore.isBefore(repeat.ends) || oneDayMore.isSame(repeat.ends)))) {
+                    datesRepeat.push(oneDayMore.format("YYYY-MM-DD"));
                 }
             });
             currentDate = currentDate.add(repeat.every, "week");
@@ -80,6 +80,15 @@ export const getDatesRepeat = (date, repeat) => {
         }
     }
     return datesRepeat;
+};
+
+// store the last repeat
+export const storeLastRepeat = async (lastRepeat) => {
+    try {
+        await AsyncStorage.setItem(`repeat_${lastRepeat.parentID}`, JSON.stringify(lastRepeat));
+    } catch (error) {
+        console.log("Could not store last repeat: ", error);
+    }
 };
 
 // task = null, when long press the task to change or delete
@@ -188,15 +197,6 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
         }
     };
 
-    // store the last repeat
-    const storeLastRepeat = async (lastRepeat) => {
-        try {
-            await AsyncStorage.setItem(`repeat_${lastRepeat.parentID}`, JSON.stringify(lastRepeat));
-        } catch (error) {
-            console.log("Could not store last repeat: ", error);
-        }
-    };
-
     // change a task
     const change = async () => {
         if (name.trim() === "") {
@@ -232,22 +232,22 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
             }
 
             if (newData.repeat.type === "Once" && task.repeat.type === "Once") {
-                // if type is still once, change task
-                await changeTask(task, newData);
-                await removeNotification(task.id);
-                await addNotification(newData.date, parentID, task.id);
+                // if type is still once, change task (in parallel)
+                await Promise.all([
+                    changeTask(task, newData),
+                    removeNotification(task.id),
+                    addNotification(newData.date, parentID, task.id)
+                ]);
             } else {
                 // remove all repeated tasks and notif
-                await deleteRepeatedTasks(task);
-                await removeRepeatNotifications(parentID);
-                // remove main task
-                if (task.parentID === null) {
-                    deleteTask(task);
-                } else {
-                    deleteTask(task, parentID);
-                }
+                await Promise.all([
+                    deleteRepeatedTasks(task),
+                    removeRepeatNotifications(parentID),
+                    // remove main task
+                    deleteTask(task, parentID)
+                ]);
                 // if now is once, and it wasnt
-                if (newData.repeat.type === "Once" && task.repeat.type !== "Once") {
+                if (newData.repeat.type === "Once") {
                     const newTask = await addTask(newData); // add new task
                     await addNotification(newData.date, newTask.id, newTask.id);
                 } else { // add new repeated
@@ -285,26 +285,15 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                 otherList, completedDate); // create new
 
             const parentID = newTask.id;
-
             // add reminder for the main task (the add notification already handles if there is date and reminder set)
             await addNotification(taskDetails.Date.value, parentID, parentID);
+
             if (repeat.type !== "Once") {
                 let dateValue = repeat.starts;
                 let datesRepeat = getDatesRepeat(dateValue, repeat);
 
-                const repeated = [];
-                for (const dateRepeat of datesRepeat) {
-                    // add repeated tasks, but if starts is == to task date, do not add (to not create same task twice)
-                    if (dateRepeat !== taskDetails.Date.value) {
-                        const newTask = await addTask(name, dateRepeat, time, taskDetails.Reminder.value,
-                            repeat, taskDetails.Duration.value, completed,
-                            otherList, completedDate, parentID);
+                const repeated = await addRepeatedTasks(datesRepeat, newTask.data);
 
-                        repeated.push(newTask.data);
-                        // add notification
-                        await addNotification(dateRepeat, parentID, newTask.id);
-                    }
-                }
                 // store last task, if there is, to add more repeated tasks when the task date arrived
                 const lastTask = repeated[repeated.length - 1];
                 if ((lastTask.repeat.ends !== "Never" && dayjs(lastTask.date).isBefore(lastTask.repeat.ends))

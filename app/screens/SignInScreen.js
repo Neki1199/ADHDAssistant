@@ -1,4 +1,4 @@
-import { ActivityIndicator, Text, View, Modal, SafeAreaView, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
+import { ActivityIndicator, Text, View, Modal, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { auth } from '../../firebaseConfig';
 import { onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
@@ -111,7 +111,7 @@ export default function SignInScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Image
         source={require('../../assets/images/logoADHD.png')}
         style={styles.img} />
@@ -158,7 +158,7 @@ export default function SignInScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   )
 }
 

@@ -1,25 +1,33 @@
 import "react-native-reanimated";
 import React, { useContext, useEffect } from 'react';
-import { TouchableOpacity, Alert, StatusBar, Text, SafeAreaView } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { NavigationContainer } from '@react-navigation/native';
+import { TouchableOpacity, Alert, StatusBar, Text, SafeAreaView } from 'react-native';
+import { useFonts } from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
+import * as Notifications from "expo-notifications";
+import AntDesign from "react-native-vector-icons/AntDesign";
+
 import SignInScreen from '../screens/SignInScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import Progress from '../screens/ProgressScreen';
 import DrawerHome from './Drawer';
+import TasksStart from "../screens/Tasks/Screens/TasksStart";
 import TaskTimer from "../screens/Tasks/Screens/TaskStartTimer";
-import { ListsTabs } from "./TaskTabs";
 import ListTasks from "../screens/Tasks/Screens/TabLists";
 import ListUpcoming from "../screens/Tasks/Screens/TabUpcoming";
-import { useFonts } from "expo-font";
-import * as SplashScreen from "expo-splash-screen";
-import AntDesign from "react-native-vector-icons/AntDesign";
-import { ListsProvider } from "../contexts/ListsContext";
-import * as Notifications from "expo-notifications";
-import TasksStart from "../screens/Tasks/Screens/TasksStart";
-import { ThemeContext, ThemeProvider } from "../contexts/ThemeContext";
 import DurationBreak from "../screens/Tasks/Components/DurationBreak";
 import HelpScreen from "../screens/HelpKit/HelpScreen";
+import Disorganized from "../screens/HelpKit/Screens/Disorganized";
+import Overwhelmed from "../screens/HelpKit/Screens/Overwhelmed";
+import Unmotivated from "../screens/HelpKit/Screens/Unmotivated";
+import Stuck from "../screens/HelpKit/Screens/Stuck";
+
+import { ListsTabs } from "./TaskTabs";
+import { ListsProvider } from "../contexts/ListsContext";
+import { ThemeContext, ThemeProvider } from "../contexts/ThemeContext";
+
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,11 +39,32 @@ const StackScreens = () => {
     return (
         <>
             <StatusBar barStyle="light-content" backgroundColor={theme.header} />
-            <Stack.Navigator screenOptions={{
-                contentStyle: { backgroundColor: "transparent" }
-            }} >
+            <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: "transparent" } }}
+            >
                 <Stack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: false }} />
-                <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: "Sign Up" }} />
+                <Stack.Screen name="SignUp" component={SignUpScreen}
+                    options={({ navigation }) => ({
+                        title: "Sign Up",
+                        animation: "slide_from_right",
+                        headerTitleAlign: "center",
+                        headerTitleStyle: {
+                            fontFamily: "Zain-Regular",
+                            fontSize: 24,
+                            color: "#FFFFFF",
+                        },
+                        headerShadowVisible: false,
+                        headerStyle: {
+                            backgroundColor: theme.header
+                        },
+                        headerLeft: () => (
+                            <TouchableOpacity
+                                onPress={() => navigation.goBack()}
+                                style={{ paddingHorizontal: 15 }}
+                            >
+                                <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
+                            </TouchableOpacity>
+                        )
+                    })} />
                 <Stack.Screen name="Home" component={DrawerHome} options={{ headerShown: false }} />
                 <Stack.Screen name="Tasks" component={ListsTabs}
                     options={({ navigation }) => ({
@@ -78,7 +107,7 @@ const StackScreens = () => {
                         headerTitleAlign: "center",
                         headerLeft: () => (
                             <TouchableOpacity
-                                onPress={() => navigation.goBack()}
+                                onPress={() => navigation.navigate("Tasks", { listID: "Daily" })}
                                 style={{ paddingHorizontal: 15 }}
                             >
                                 <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
@@ -142,23 +171,121 @@ const StackScreens = () => {
                             backgroundColor: theme.header
                         }
                     })} />
-                <Stack.Screen name="Help" component={HelpScreen} options={({ navigation }) => ({
-                    title: "",
-                    animation: "slide_from_right",
-                    headerTitleAlign: "center",
-                    headerLeft: () => (
-                        <TouchableOpacity
-                            onPress={() => navigation.goBack()}
-                            style={{ paddingHorizontal: 15 }}
-                        >
-                            <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
-                        </TouchableOpacity>
-                    ),
-                    headerShadowVisible: false,
-                    headerStyle: {
-                        backgroundColor: theme.header
-                    }
-                })} />
+                <Stack.Screen name="Help" component={HelpScreen}
+                    options={({ navigation }) => ({
+                        title: "Tasks Help",
+                        animation: "slide_from_right",
+                        headerTitleAlign: "center",
+                        headerLeft: () => (
+                            <TouchableOpacity
+                                onPress={() => navigation.goBack()}
+                                style={{ paddingHorizontal: 15 }}
+                            >
+                                <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
+                            </TouchableOpacity>
+                        ),
+                        headerTitleStyle: {
+                            fontFamily: "Zain-Regular",
+                            fontSize: 30,
+                            color: "#FFFFFF",
+                        },
+                        headerShadowVisible: false,
+                        headerStyle: {
+                            backgroundColor: theme.header
+                        }
+                    })} />
+                <Stack.Screen name="Disorganized" component={Disorganized}
+                    options={({ navigation }) => ({
+                        title: "I Feel Disorganized",
+                        animation: "slide_from_right",
+                        headerTitleAlign: "center",
+                        headerLeft: () => (
+                            <TouchableOpacity
+                                onPress={() => navigation.goBack()}
+                                style={{ paddingHorizontal: 15 }}
+                            >
+                                <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
+                            </TouchableOpacity>
+                        ),
+                        headerTitleStyle: {
+                            fontFamily: "Zain-Regular",
+                            fontSize: 30,
+                            color: "#FFFFFF",
+                        },
+                        headerShadowVisible: false,
+                        headerStyle: {
+                            backgroundColor: theme.header
+                        }
+                    })} />
+                <Stack.Screen name="Overwhelmed" component={Overwhelmed}
+                    options={({ navigation }) => ({
+                        title: "I Feel Overwhelmed",
+                        animation: "slide_from_right",
+                        headerTitleAlign: "center",
+                        headerLeft: () => (
+                            <TouchableOpacity
+                                onPress={() => navigation.goBack()}
+                                style={{ paddingHorizontal: 15 }}
+                            >
+                                <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
+                            </TouchableOpacity>
+                        ),
+                        headerTitleStyle: {
+                            fontFamily: "Zain-Regular",
+                            fontSize: 30,
+                            color: "#FFFFFF",
+                        },
+                        headerShadowVisible: false,
+                        headerStyle: {
+                            backgroundColor: theme.header
+                        }
+                    })} />
+                <Stack.Screen name="Stuck" component={Stuck}
+                    options={({ navigation }) => ({
+                        title: "I Feel Stuck",
+                        animation: "slide_from_right",
+                        headerTitleAlign: "center",
+                        headerLeft: () => (
+                            <TouchableOpacity
+                                onPress={() => navigation.goBack()}
+                                style={{ paddingHorizontal: 15 }}
+                            >
+                                <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
+                            </TouchableOpacity>
+                        ),
+                        headerTitleStyle: {
+                            fontFamily: "Zain-Regular",
+                            fontSize: 30,
+                            color: "#FFFFFF",
+                        },
+                        headerShadowVisible: false,
+                        headerStyle: {
+                            backgroundColor: theme.header
+                        }
+                    })} />
+                <Stack.Screen name="Unmotivated" component={Unmotivated}
+                    options={({ navigation }) => ({
+                        title: "I Feel Unmotivated",
+                        animation: "slide_from_right",
+                        headerTitleAlign: "center",
+                        headerLeft: () => (
+                            <TouchableOpacity
+                                onPress={() => navigation.goBack()}
+                                style={{ paddingHorizontal: 15 }}
+                            >
+                                <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
+                            </TouchableOpacity>
+                        ),
+                        headerTitleStyle: {
+                            fontFamily: "Zain-Regular",
+                            fontSize: 30,
+                            color: "#FFFFFF",
+                        },
+                        headerShadowVisible: false,
+                        headerStyle: {
+                            backgroundColor: theme.header
+                        }
+                    })} />
                 <Stack.Screen name="Progress" component={Progress} />
             </Stack.Navigator>
         </>
@@ -204,11 +331,13 @@ export default function App() {
     return (
         <ThemeProvider>
             <ListsProvider>
-                <SafeAreaView style={{ flex: 1 }}>
-                    <NavigationContainer>
-                        <StackScreens />
-                    </NavigationContainer>
-                </SafeAreaView>
+                <GestureHandlerRootView>
+                    <SafeAreaView style={{ flex: 1 }}>
+                        <NavigationContainer>
+                            <StackScreens />
+                        </NavigationContainer>
+                    </SafeAreaView>
+                </GestureHandlerRootView>
             </ListsProvider>
         </ThemeProvider>
     );

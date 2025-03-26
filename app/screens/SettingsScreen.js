@@ -7,21 +7,16 @@ export default function Settings({ navigation }) {
   const { theme } = useContext(ThemeContext);
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={[theme.header, theme.linear2]}
-        style={styles.gradient}
-      >
+    <LinearGradient
+      colors={[theme.header, theme.linear2]}
+      style={styles.gradient}
+    >
 
-      </LinearGradient>
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   gradient: {
     flex: 1,
     alignItems: "center",
