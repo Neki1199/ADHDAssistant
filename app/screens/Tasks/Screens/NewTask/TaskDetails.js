@@ -1,11 +1,58 @@
 import React, { useContext } from "react";
 import { View, TouchableWithoutFeedback, StyleSheet, Text, TouchableOpacity, Modal, FlatList } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
-import { ThemeContext } from "../../../contexts/ThemeContext";
+import { ThemeContext } from "../../../../contexts/ThemeContext";
+import dayjs from "dayjs";
 
-const TaskDetails = ({ modalInputs, taskDetails, showLists, listsItems, setShowLists, resetTaskDetail, otherList, setOtherList, resetTime }) => {
+const TaskDetails = ({ taskDetails, showLists, listsItems, setShowLists, resetTaskDetail, otherList,
+    setOtherList, resetTime, repeat, setShowRepeatModal, setPickerField, setShowDurationPicker,
+    setModalDateTime, time }) => {
     const { theme } = useContext(ThemeContext);
     const styles = useStyles(theme);
+
+    const openReminder = () => {
+        setPickerField("Reminder");
+        setShowDurationPicker(true);
+    };
+
+    const openList = () => {
+        setShowLists(true);
+    };
+
+    const openRepeat = () => {
+        setShowRepeatModal(true);
+    };
+
+    // calendar and time pickers
+    const showDatePicker = () => {
+        setModalDateTime(true);
+        setPickerField("Time");
+    };
+
+    const showDuration = () => {
+        setPickerField("Duration")
+        setShowDurationPicker(true);
+    };
+
+
+    const modalInputs = [
+        {
+            nameInput: "Date/Time", icon: "calendar", inputFunction: showDatePicker, setValue: taskDetails.Date.value ?
+                `${dayjs(taskDetails.Date.value).format("DD MMMM")} ${time}` : "None"
+        },
+        {
+            nameInput: "Reminder", icon: "bells", inputFunction: openReminder,
+            setValue: taskDetails.Reminder.value ? `At ${taskDetails.Reminder.value}` : "None"
+        }, // if time is set, choose minutes/hours before. If no time, set reminder as hh:mm
+        { nameInput: "Repeat", icon: "retweet", inputFunction: openRepeat, setValue: repeat?.type || "Once" },
+        {
+            nameInput: "Duration", icon: "hourglass", inputFunction: showDuration,
+            setValue: taskDetails.Duration.value ? `${taskDetails.Duration.value.split(":")[0]} h ${taskDetails.Duration.value.split(":")[1]} min`
+                :
+                "None"
+        },
+        { nameInput: "List", icon: "bars", inputFunction: openList, setValue: otherList }
+    ];
 
     return (
         <View style={styles.inputsContainer}>

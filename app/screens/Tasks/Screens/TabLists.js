@@ -2,13 +2,14 @@ import React, { useState, useEffect, useContext } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator, FlatList, ScrollView, TouchableOpacity, Image, Modal, TouchableWithoutFeedback } from 'react-native';
 import { getTasks, deleteAllCompleted } from '../../../contexts/TasksDB';
 import { LinearGradient } from 'expo-linear-gradient';
-import ModalNewTask from "../Modals/ModalNewTask";
+import ModalNewTask from "./NewTask/ModalNewTask";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AntDesign from "react-native-vector-icons/AntDesign";
 import dayjs from 'dayjs';
 import TaskItem from '../Components/TaskItem';
 import { ModalStart } from '../Modals/ModalStart';
 import { ThemeContext } from '../../../contexts/ThemeContext';
+import { AddList } from '../Modals/AddList';
 
 export const sortTasks = (tasks) => {
     return tasks.sort((a, b) => {
@@ -35,10 +36,15 @@ const ListTasks = ({ route, navigation }) => {
     const [tasks, setTasks] = useState([]);
     const [showCompleted, setShowCompleted] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
+    // the modal to add a new list
+    const [modalList, setModalList] = useState(false);
+    const [listName, setListName] = useState("");
+
     const [modalDeleteAll, setModalDeleteAll] = useState(false);
     const currentDay = dayjs().format("YYYY-MM-DD");
     const [loading, setLoading] = useState(true);
     const [modalStart, setModalStart] = useState(false);
+    const [showButtons, setShowButtons] = useState(false);
 
     useEffect(() => {
         const unsuscribe = getTasks(listID, (newTasks) => {
@@ -150,7 +156,7 @@ const ListTasks = ({ route, navigation }) => {
                             scrollEnabled={false}
                             ListEmptyComponent={
                                 //  incompleted tasks
-                                dailyAllTasksCompleted ? (
+                                dailyAllTasksCompleted && filteredTasks.completed.length > 0 ? (
                                     // image all completed!
                                     <Image
                                         source={require("../../../../assets/images/completed.png")}
@@ -200,12 +206,41 @@ const ListTasks = ({ route, navigation }) => {
                 </View>
             </ScrollView >
 
-            {/* modal view add new task btn*/}
             <TouchableOpacity
-                style={[styles.addTaskButton]}
-                onPress={() => setModalVisible(true)}>
+                style={styles.addTaskButton}
+                onPress={() => setShowButtons(!showButtons)}>
                 <AntDesign name="plus" size={22} color="#FFFFFF" />
             </TouchableOpacity>
+
+            {showButtons && (
+                <View style={styles.bottomBtns}>
+                    <TouchableOpacity
+                        style={[styles.addTaskButton, { bottom: 55, left: 0, backgroundColor: theme.linear3 }]}
+                        onPress={() => {
+                            setShowButtons(false);
+                            setModalVisible(true);
+                        }}>
+                        <Text style={{ fontSize: 12, color: "#FFFFFF", fontFamily: "monospace" }}>Task</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.addTaskButton, { bottom: 10, left: -40, backgroundColor: theme.linear3 }]}
+                        onPress={() => {
+                            setShowButtons(false);
+                            setModalList(true);
+                        }}>
+                        <Text style={{ fontSize: 12, color: "#FFFFFF", fontFamily: "monospace" }}>List</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            {modalList && (
+                <AddList
+                    modalVisible={modalList}
+                    setModalVisible={setModalList}
+                    listName={listName}
+                    setListName={setListName}
+                />
+            )}
 
             {/* random button */}
             <TouchableOpacity
@@ -338,6 +373,16 @@ const useStyles = (theme) => StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         right: 20
+    },
+    bottomBtns: {
+        flexDirection: "row",
+        gap: 20,
+        position: "absolute",
+        alignSelf: "center",
+        alignItems: "center",
+        justifyContent: "space-around",
+        bottom: 20,
+        right: 100
     }
 });
 

@@ -13,7 +13,6 @@ const Tab = createMaterialTopTabNavigator();
 
 export const ListsTabs = ({ route, navigation }) => {
     const { allLists } = useContext(ListsContext);
-    const { listID } = route.params;
     const { theme } = useContext(ThemeContext);
 
     const [modalVisible, setModalVisible] = useState(false);
@@ -23,7 +22,7 @@ export const ListsTabs = ({ route, navigation }) => {
     const [modalChangeVisible, setModalChangeVisible] = useState(false);
     const [isRenaming, setIsRenaming] = useState(false); // to not show the process of adding and deleting a list
 
-    // params from App.js where the header is set
+    // params to change tabs if pressed from home screen, add list
     useEffect(() => {
         if (route.params?.openModal) {
             setModalVisible(true);
@@ -68,7 +67,7 @@ export const ListsTabs = ({ route, navigation }) => {
             <Tab.Navigator
                 key={allLists.length}
                 initialLayout={{ width: Dimensions.get("window").width }}
-                initialRouteName={listID}
+                initialRouteName={"Daily"}
                 screenOptions={{
                     swipeEnabled: false,
                     animationEnabled: false,
@@ -80,7 +79,8 @@ export const ListsTabs = ({ route, navigation }) => {
                     tabBarStyle: {
                         backgroundColor: theme.header,
                         elevation: 0,
-                        shadowOpacity: 0
+                        shadowOpacity: 0,
+                        paddingTop: 10
                     },
                     tabBarLabelStyle: {
                         fontFamily: "Zain-Regular",
@@ -100,7 +100,7 @@ export const ListsTabs = ({ route, navigation }) => {
                     component={ListTasks}
                     initialParams={{ listID: "Daily" }}
                 />
-                {allLists.filter(list => list.id !== "Upcoming" && list.id !== "Daily").map((list) => (
+                {allLists.filter(list => list.id !== "Daily").map((list) => (
                     <Tab.Screen
                         key={list.id}
                         name={list.id}

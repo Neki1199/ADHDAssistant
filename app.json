@@ -52,6 +52,10 @@
                 "light": "#444444",
                 "dark": "#FFFFFF"
               },
+              "textColorSecondary": {
+                "light": "#979797",
+                "dark": "#979797"
+              },
               "windowBackground": {
                 "light": "#FFFFFF",
                 "dark": "#444444"

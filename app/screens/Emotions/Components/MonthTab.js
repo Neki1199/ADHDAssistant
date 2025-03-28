@@ -13,8 +13,8 @@ export const MonthView = ({ allEmotionsCount, pieChart, chartConfig }) => {
             {totalSum > 0 ? (
                 <PieChart
                     data={pieChart(allEmotionsCount)}
-                    width={320}
-                    height={220}
+                    width={280}
+                    height={180}
                     chartConfig={chartConfig}
                     accessor={"population"}
                     backgroundColor={"transparent"}

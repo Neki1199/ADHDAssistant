@@ -13,8 +13,8 @@ export const WeekView = ({ allEmotions, countEmotions, chartConfig, pieChart }) 
             {Object.keys(allEmotions).length > 0 ? (
                 <PieChart
                     data={pieChart(countedEmotions)}
-                    width={320}
-                    height={220}
+                    width={280}
+                    height={180}
                     chartConfig={chartConfig}
                     accessor={"population"}
                     backgroundColor={"transparent"}

@@ -1,7 +1,7 @@
-import React, { useContext, useState } from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { setCompleted, setNotCompleted } from '../../../contexts/TasksDB';
-import ModalNewTask from "../Modals/ModalNewTask";
+import ModalNewTask from "../Screens/NewTask/ModalNewTask";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import dayjs from 'dayjs';
@@ -106,7 +106,7 @@ const TaskItem = ({ item, navigation, colour = null }) => {
                         isChecked={checked}
                         fillColor="#4B4697"
                         iconStyle={styles.checkboxStyle}
-                        bounceEffectIn={3}
+                        bounceEffectIn={2}
                         onPress={() => changeChecked()}
                         innerIconStyle={{
                             backgroundColor: "rgba(255, 255, 255, 0.4)",
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     },
     taskCompleted: {
         opacity: 0.5,
-        backgroundColor: "#E4E3F6"
+        backgroundColor: "#B7E2B0"
     },
     checkboxStyle: {
         borderWidth: 2,

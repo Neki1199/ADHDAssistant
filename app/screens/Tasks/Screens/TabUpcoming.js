@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef, useMemo, useCallback } from 'react';
-import { View, StyleSheet, Text, FlatList, ScrollView, Image, TouchableOpacity, ActivityIndicator, SafeAreaView } from 'react-native';
+import { View, StyleSheet, Text, FlatList, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { getUncompletedMonth } from '../../../contexts/TasksDB';
 import { ListsContext } from "../../../contexts/ListsContext";
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,6 +16,7 @@ const ListUpcoming = ({ navigation }) => {
     const styles = useStyles(theme);
     const [showCalendar, setShowCalendar] = useState(true);
     const [showNoDueDate, setShowNoDueDate] = useState(false);
+    const [showDate, setShowDate] = useState(false);
 
     const [tasks, setTasks] = useState({}); // store all tasks for current month
     const [undatedTasks, setUndatedTasks] = useState([]); // store undated tasks
@@ -226,13 +227,11 @@ const ListUpcoming = ({ navigation }) => {
                     <View style={styles.touchShowComplete}>
                         <Text style={styles.sectionTitle}>Tasks without date</Text>
                         <TouchableOpacity onPress={changeShowDue} style={{ flexDirection: "row" }}>
-                            {undatedTasks.length > 0 && (
-                                <View style={styles.number}>
-                                    <Text style={{ fontSize: 12, color: theme.text }}>
-                                        {undatedTasks.length}
-                                    </Text>
-                                </View>
-                            )}
+                            <View style={styles.number}>
+                                <Text style={{ fontSize: 12, color: theme.text }}>
+                                    {undatedTasks.length}
+                                </Text>
+                            </View>
                             <AntDesign style={{ right: 10 }} name={showNoDueDate ? "up" : "down"} size={22} color={theme.name === "light" ? "#404040" : "#FFFFFF"} />
                         </TouchableOpacity>
                     </View>
@@ -254,24 +253,35 @@ const ListUpcoming = ({ navigation }) => {
                         />
                     )}
 
+                    {/* hide or show dated tasks */}
                     <View style={styles.touchShowComplete}>
-                        <Text style={styles.sectionTitle}>Tasks for {dayjs(selectedDate).format("dddd MMM YYYY")}</Text>
+                        <Text style={styles.sectionTitle}>Tasks {dayjs(selectedDate).format("dddd MMM YYYY")}</Text>
+                        <TouchableOpacity onPress={() => setShowDate(!showDate)} style={{ flexDirection: "row" }}>
+                            <View style={styles.number}>
+                                <Text style={{ fontSize: 12, color: theme.text }}>
+                                    {selectedDateTasks.length}
+                                </Text>
+                            </View>
+                            <AntDesign style={{ right: 10 }} name={showDate ? "up" : "down"} size={22} color={theme.name === "light" ? "#404040" : "#FFFFFF"} />
+                        </TouchableOpacity>
                     </View>
 
-                    <FlatList
-                        style={styles.flatlist}
-                        data={selectedDateTasks}
-                        keyExtractor={item => `${item.name}-${item.date}`}
-                        renderItem={({ item }) => (
-                            <TaskItem item={item} navigation={navigation} colour={listColours[item.list]} />
-                        )}
-                        ListEmptyComponent={
-                            <Image
-                                source={require("../../../../assets/images/tasksCompleted.png")} // cambiar a vacio imagen
-                                style={styles.img} />
-                        }
-                        scrollEnabled={false}
-                    />
+                    {showDate && (
+                        <FlatList
+                            style={styles.flatlist}
+                            data={selectedDateTasks}
+                            keyExtractor={item => `${item.name}-${item.date}`}
+                            renderItem={({ item }) => (
+                                <TaskItem item={item} navigation={navigation} colour={listColours[item.list]} />
+                            )}
+                            ListEmptyComponent={
+                                <Image
+                                    source={require("../../../../assets/images/tasksCompleted.png")} // cambiar a vacio imagen
+                                    style={styles.img} />
+                            }
+                            scrollEnabled={false}
+                        />
+                    )}
                 </View>
             </ScrollView>
         </LinearGradient>
@@ -293,7 +303,6 @@ const useStyles = (theme) => StyleSheet.create({
         backgroundColor: theme.container,
         alignSelf: "center",
         borderRadius: 20,
-        marginTop: 10,
         // android
         elevation: 2,
         shadowColor: '#000000',

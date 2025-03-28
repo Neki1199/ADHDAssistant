@@ -6,7 +6,7 @@ import {
     onSnapshot, getDoc, setDoc, deleteDoc,
     deleteField, writeBatch
 } from '@firebase/firestore';
-import { scheduleNotification } from '../screens/Tasks/Components/Notifications';
+import { scheduleNotification } from '../screens/Tasks/Screens/NewTask/Notifications';
 import dayjs from 'dayjs';
 
 // add a new task to a specific list
@@ -467,23 +467,25 @@ export const getProgress = (listID, setProgress) => {
 
 export const getTasksProgress = async (setProgress) => {
     const userID = auth.currentUser?.uid;
-    if (!userID) return;
+    if (!userID) return () => { };
 
     const progressRef = doc(db, "users", userID, "otherToDo", "progress");
 
-    const unsuscribe = onSnapshot(progressRef, (progressDoc) => {
-        const progress = progressDoc.data();
-        setProgress(progress);
-    }, (error) => {
+    try {
+        const unsuscribe = onSnapshot(progressRef, (progressDoc) => {
+            const progress = progressDoc.data();
+            setProgress(progress);
+        });
+        return unsuscribe;
+    } catch (error) {
         console.log("Error retrieving tasks progress: ", error)
-    });
-
-    return unsuscribe;
+        return () => { };
+    };
 };
 
 export const deleteRepeatedTasks = async (task) => {
     const userID = auth.currentUser?.uid;
-    if (!userID) return;
+    if (!userID) return () => { };
 
     const parentID = task.parentID ? task.parentID : task.id;
     const tasksRef = collection(db, "users", userID, "todoLists", task.list, "Tasks");

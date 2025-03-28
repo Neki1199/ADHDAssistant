@@ -43,6 +43,7 @@ const EmotionsProgress = () => {
     const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
     const [currentMonth, setCurrentMonth] = useState(dayjs().format("YYYY-MM"));
     const { theme } = useContext(ThemeContext);
+    const styles = useStyles(theme);
     const [calendarKey, setCalendarKey] = useState(0); // to re render the calendar when theme canges
 
     // listen for changes in actual month
@@ -104,11 +105,6 @@ const EmotionsProgress = () => {
                             setSelectedDate(day.dateString)
                         }
                         hideExtraDays={true}
-                        style={{
-                            width: "100%",
-                            height: "100%",
-                            borderRadius: 15
-                        }}
                         theme={{
                             calendarBackground: theme.container,
                             todayBackgroundColor: "#4B4697",
@@ -133,7 +129,7 @@ const EmotionsProgress = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const useStyles = (theme) => StyleSheet.create({
     container: {
         flex: 1,
         width: "100%",
@@ -150,7 +146,7 @@ const styles = StyleSheet.create({
     },
     containerCalendar: {
         width: "100%",
-        height: "54%",
+        padding: 10,
         borderRadius: 20,
         // android
         elevation: 2,
@@ -159,6 +155,9 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,
         shadowRadius: 4,
+        backgroundColor: theme.container,
+        alignSelf: "center",
+        marginTop: 10
     }
 });
 

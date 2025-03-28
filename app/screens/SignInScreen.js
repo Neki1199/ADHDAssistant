@@ -16,10 +16,10 @@ export default function SignInScreen({ navigation }) {
     const stayConnected = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         if (currentUser.emailVerified) {
-          navigation.replace("Home");
+          navigation.replace("Tabs");
         } else {
           navigation.navigate("SignIn");
-          setCheckAuth(false); // do not show spinner, go to login
+          setCheckAuth(false); // do not show loading, go to login
         }
       } else {
         setCheckAuth(false);
@@ -46,7 +46,7 @@ export default function SignInScreen({ navigation }) {
         );
         return;
       } else { // go home
-        navigation.replace("Home");
+        navigation.replace("Tabs");
       }
     } catch (error) {
       if (!email || !password) {

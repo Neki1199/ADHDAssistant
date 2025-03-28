@@ -5,10 +5,10 @@ import { CircularProgress } from 'react-native-circular-progress';
 import { ListsContext } from "../../../contexts/ListsContext";
 import { ThemeContext } from '../../../contexts/ThemeContext';
 import { AntDesign } from '@expo/vector-icons';
-import ModalNewTask from '../Modals/ModalNewTask';
+import ModalNewTask from '../Screens/NewTask/ModalNewTask';
 import { AddList } from '../Modals/AddList';
 
-const TasksItemHome = ({ listID, navigation }) => {
+const TasksItemHome = ({ listID }) => {
   const [progress, setProgress] = useState(0);
   const { theme } = useContext(ThemeContext);
   const styles = useStyles(theme);
@@ -21,25 +21,23 @@ const TasksItemHome = ({ listID, navigation }) => {
 
   return (
     <View style={styles.listItem}>
-      <TouchableOpacity style={{ alignItems: "center" }} onPress={() => navigation.navigate("Tasks", { listID: listID })}>
-        <CircularProgress
-          size={50}
-          width={4}
-          fill={progress}
-          tintColor={theme.name === "light" ? '#4B4697' : "#1C1C1C"}
-          backgroundColor='#DBDADA'
-        >
-          {(fill) => <Text style={{ fontSize: 16, fontFamily: "Zain-Regular", color: theme.name === "light" ? "#000000" : "#FFFFFF" }}>
-            {fill === -1 ? "--" : `${fill.toFixed(0)}%`}
-          </Text>}
-        </CircularProgress>
-        <Text style={styles.textList}>{listID}</Text>
-      </TouchableOpacity>
+      <CircularProgress
+        size={50}
+        width={4}
+        fill={progress}
+        tintColor={theme.name === "light" ? '#4B4697' : "#1C1C1C"}
+        backgroundColor='#DBDADA'
+      >
+        {(fill) => <Text style={{ fontSize: 16, fontFamily: "Zain-Regular", color: theme.name === "light" ? "#000000" : "#FFFFFF" }}>
+          {fill === -1 ? "--" : `${fill.toFixed(0)}%`}
+        </Text>}
+      </CircularProgress>
+      <Text style={styles.textList}>{listID}</Text>
     </View>
   );
 };
 
-export default function TasksHome({ navigation }) {
+export default function TasksHome() {
   const { allLists } = useContext(ListsContext);
   const { theme } = useContext(ThemeContext);
   const [modalVisible, setModalVisible] = useState(false);
@@ -65,7 +63,7 @@ export default function TasksHome({ navigation }) {
           ]}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <TasksItemHome listID={item.id} navigation={navigation} />
+            <TasksItemHome listID={item.id} />
           )}
         />
 

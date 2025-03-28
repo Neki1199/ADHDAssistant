@@ -50,7 +50,7 @@ export default function DrawerHome({ navigation }) {
                     </TouchableOpacity>
                 ),
                 swipeEnabled: false,
-                drawerType: "back",
+                drawerType: "slide",
                 headerTitle: `Welcome ${username}`,
                 headerStyle: {
                     height: 70,

@@ -9,10 +9,9 @@ const DurationBreak = ({ route, navigation }) => {
     const { task, fromButton = false, restart = false } = route.params;
     const { theme } = useContext(ThemeContext);
     const styles = useStyles(theme);
-
     const [showRoulette, setShowRoulette] = useState(false);
 
-    const [hFormat, mFormat] = task.duration?.split(":");
+    const [hFormat, mFormat] = task.duration !== "" ? task.duration?.split(":") : ["", ""];
     const [durationH, setDurationH] = useState(hFormat);
     const [durationM, setDurationM] = useState(mFormat);
 
@@ -51,16 +50,8 @@ const DurationBreak = ({ route, navigation }) => {
         // to be 00:00
         const formattedHours = (durationH || "0").padStart(2, "0");
         const formattedMins = (durationM || "0").padStart(2, "0");
-
-        if (formattedHours === "00" && formattedMins === "00") {
-            Alert.alert(
-                "⚠️ Ups!",
-                "Please enter a duration",
-                [{ text: "Try Again", style: "default" }]
-            );
-            return;
-        } else {
-            // change the duration
+        // change the duration
+        if (formattedHours !== "00" && formattedMins !== "00") {
             setDurationH(formattedHours);
             setDurationM(formattedMins);
         }
@@ -91,6 +82,7 @@ const DurationBreak = ({ route, navigation }) => {
     // calculate the duration depending on the breaks
     const setDurationBreak = () => {
         formatHours(); // format hours as 00:00
+
         let counter = 0;
         if (taskBreak !== "" && breakRepeat > 0) {
             counter = setBreak(); // set counter of break
@@ -109,6 +101,8 @@ const DurationBreak = ({ route, navigation }) => {
             } else {
                 return { duration: totalMinutes * 60, counter: counter };
             };
+        } else {
+            return { duration: 0, counter: 0 };
         }
     };
 
@@ -130,7 +124,13 @@ const DurationBreak = ({ route, navigation }) => {
 
     const startCounter = () => {
         const { duration, counter } = setDurationBreak();
-        if (duration === undefined) {
+
+        if (duration === 0 && counter === 0) {
+            Alert.alert(
+                "⚠️ Ups!",
+                "Please enter a duration",
+                [{ text: "Try Again", style: "default" }]
+            );
             return;
         } else {
             navigation.navigate("TaskTimer", {

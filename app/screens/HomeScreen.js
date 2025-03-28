@@ -1,15 +1,15 @@
 import * as SystemUI from "expo-system-ui";
 import React, { useContext, useEffect } from "react";
-import { StyleSheet, View, Text, TouchableOpacity, Image } from "react-native";
+import { StyleSheet, View } from "react-native";
 import EmotionsHome from "../screens/Emotions/Components/EmotionsHome";
 import TasksHome from "../screens/Tasks/Components/TasksHome"
 import { LinearGradient } from "expo-linear-gradient";
 import { ThemeContext } from "../contexts/ThemeContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
-import { getDatesRepeat, storeLastRepeat } from "./Tasks/Modals/ModalNewTask";
+import { getDatesRepeat, storeLastRepeat } from "./Tasks/Screens/NewTask/ModalNewTask";
 import { addTask } from "../contexts/TasksDB";
-import { scheduleNotification } from "./Tasks/Components/Notifications";
+import { scheduleNotification } from "./Tasks/Screens/NewTask/Notifications";
 
 export default function HomeScreen({ navigation }) {
   const { theme } = useContext(ThemeContext);
@@ -98,18 +98,7 @@ export default function HomeScreen({ navigation }) {
         colors={[theme.header, theme.linear2]}
         style={styles.gradient}>
         <EmotionsHome />
-        <TasksHome navigation={navigation} />
-
-        <View style={styles.containerInside}>
-          <TouchableOpacity onPress={() => navigation.navigate("Help")} style={[styles.btn,
-          { backgroundColor: theme.name === "light" ? "rgba(255, 255, 255, 0.6)" : "rgba(255, 255, 255, 0.1)" }
-          ]}>
-            <Text style={styles.text}>Tasks Help</Text>
-            <Image
-              source={require("../../assets/images/help.png")}
-              style={styles.img} />
-          </TouchableOpacity>
-        </View>
+        <TasksHome />
       </LinearGradient>
     </View >
 
@@ -126,31 +115,5 @@ const useStyles = (theme) => StyleSheet.create({
     alignItems: "center",
     paddingTop: 10,
     gap: 30
-  },
-  containerInside: {
-    flex: 1,
-    padding: 10,
-    width: "90%",
-    justifyContent: "center",
-    alignContent: "flex-start",
-    bottom: 50
-  },
-  btn: {
-    borderRadius: 100,
-    alignItems: "center",
-    width: 160,
-    padding: 15,
-
-  },
-  text: {
-    color: theme.tabText,
-    fontFamily: "Zain-Regular",
-    fontSize: 20,
-    textAlign: "center"
-  },
-  img: {
-    width: 100,
-    height: 100,
-    marginTop: 5,
   }
 });

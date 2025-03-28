@@ -40,15 +40,16 @@ const useStyles = (theme) => StyleSheet.create({
     flex: 1,
     justifyContent: "flex-start",
     alignItems: "center",
-    paddingTop: 10
+    paddingTop: 20
   },
   container: {
-    width: "90%",
+    width: "90%"
   },
   title: {
     color: "#FFFFFF",
     fontFamily: "Zain-Regular",
-    fontSize: 25
+    fontSize: 25,
+    textAlign: "center"
   },
   helpContainer: {
     marginTop: 20,

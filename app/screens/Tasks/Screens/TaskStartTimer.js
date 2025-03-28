@@ -70,7 +70,7 @@ const TaskTimer = ({ route, navigation }) => {
                 {/* task counter*/}
                 {!tenSecondsCounter && taskCounterVisible && !breakCounterVisible && (
                     <>
-                        <Text style={[styles.title, { fontSize: 30, padding: 20 }]}>In process...</Text>
+                        <Text style={[styles.title, { fontSize: 30, padding: 20 }]}>{task.name} in process...</Text>
                         <CountdownCircleTimer
                             isPlaying={startCounterTask}
                             duration={durationWithBreak}
@@ -117,7 +117,7 @@ const TaskTimer = ({ route, navigation }) => {
                         <Text style={[styles.title, { fontSize: 30, padding: 10 }]}>Break Time</Text>
                         <Image
                             source={require("../../../../assets/images/break.png")}
-                            style={[styles.img, { position: "absolute", width: 850, height: 850, bottom: -160, left: -235 }]} />
+                            style={[styles.img, { position: "absolute", width: 850, height: 850, bottom: -160, left: -235, opacity: 0.3 }]} />
                         <CountdownCircleTimer
                             isPlaying={startBreak}
                             duration={parseInt(taskBreak, 10) * 60}
@@ -162,17 +162,17 @@ const TaskTimer = ({ route, navigation }) => {
                                 <TouchableOpacity onPress={() => setStartCounterTask(false)}
                                     style={{ opacity: breakCounterVisible ? 0.5 : 1 }}
                                     disabled={breakCounterVisible}>
-                                    <AntDesign name="pausecircle" size={45} color={startBreak ? (theme.name === "light" ? "#7A74C9" : "#DDDBFF") : "#7A74C9"} />
+                                    <AntDesign name="pausecircle" size={45} color={startBreak ? (theme.name === "light" ? "#1D1869" : "#DDDBFF") : "#7A74C9"} />
                                 </TouchableOpacity>
                             ) : (
                                 // start
                                 <TouchableOpacity onPress={() => setStartCounterTask(true)}>
-                                    <AntDesign name="play" size={45} color={startBreak ? (theme.name === "light" ? "#7A74C9" : "#DDDBFF") : "#7A74C9"} />
+                                    <AntDesign name="play" size={45} color={startBreak ? (theme.name === "light" ? "#1D1869" : "#DDDBFF") : "#7A74C9"} />
                                 </TouchableOpacity>
                             )}
                             {/* restart */}
                             <TouchableOpacity onPress={() => navigation.navigate("DurationBreak", { task: task, restart: true, fromButton: true })}>
-                                <AntDesign name="reload1" size={45} color={startBreak ? (theme.name === "light" ? "#7A74C9" : "#DDDBFF") : "#7A74C9"} />
+                                <AntDesign name="reload1" size={45} color={startBreak ? (theme.name === "light" ? "#1D1869" : "#DDDBFF") : "#7A74C9"} />
                             </TouchableOpacity>
                         </View>
 
