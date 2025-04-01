@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Alert, Dimensions } from "react-native";
+import { Alert, Dimensions, Text, StyleSheet, View } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { changeList } from "../contexts/TasksDB";
 import ListTasks from "../screens/Tasks/Screens/TabLists";
@@ -8,12 +8,14 @@ import { ListsContext } from "../contexts/ListsContext";
 import { ThemeContext } from "../contexts/ThemeContext";
 import { AddList } from "../screens/Tasks/Modals/AddList";
 import { ChangeDeleteList } from "../screens/Tasks/Modals/ChangeDeleteList";
+import { TasksContext } from "../contexts/TasksContext";
 
 const Tab = createMaterialTopTabNavigator();
 
 export const ListsTabs = ({ route, navigation }) => {
     const { allLists } = useContext(ListsContext);
     const { theme } = useContext(ThemeContext);
+    const { listsNums } = useContext(TasksContext);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [listName, setListName] = useState("");
@@ -99,6 +101,19 @@ export const ListsTabs = ({ route, navigation }) => {
                     name="Daily"
                     component={ListTasks}
                     initialParams={{ listID: "Daily" }}
+                    options={{
+                        tabBarBadge: () => {
+                            return (
+                                listsNums?.["Daily"] > 0 && (
+                                    <View style={[styles.badge, { backgroundColor: theme.name === "light" ? "#4B4697" : "#A4A2C7" }]}>
+                                        <Text style={[styles.textBage, { color: theme.name === "light" ? "#FFFFFF" : "#12102F" }]}>
+                                            {listsNums?.["Daily"] > 0 ? listsNums["Daily"] : null}
+                                        </Text>
+                                    </View>
+                                )
+                            )
+                        }
+                    }}
                 />
                 {allLists.filter(list => list.id !== "Daily").map((list) => (
                     <Tab.Screen
@@ -112,6 +127,19 @@ export const ListsTabs = ({ route, navigation }) => {
                                 setModalChangeVisible(true);
                             }
                         }}
+                        options={{
+                            tabBarBadge: () => {
+                                return (
+                                    listsNums?.[list.id] > 0 && (
+                                        <View style={[styles.badge, { backgroundColor: theme.name === "light" ? "#4B4697" : "#A4A2C7" }]}>
+                                            <Text style={[styles.textBage, { color: theme.name === "light" ? "#FFFFFF" : "#12102F" }]}>
+                                                {listsNums?.[list.id] > 0 ? listsNums[list.id] : null}
+                                            </Text>
+                                        </View>
+                                    )
+                                )
+                            }
+                        }}
                     />))}
                 <Tab.Screen
                     key="Upcoming"
@@ -123,3 +151,18 @@ export const ListsTabs = ({ route, navigation }) => {
         </>
     );
 };
+
+const styles = StyleSheet.create({
+    badge: {
+        borderRadius: 20,
+        minWidth: 20,
+        paddingHorizontal: 6,
+        paddingVertical: 1,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    textBage: {
+        fontWeight: "bold",
+        fontSize: 14
+    }
+})

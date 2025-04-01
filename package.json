@@ -44,7 +44,7 @@
     "expo-symbols": "~0.2.2",
     "expo-system-ui": "~4.0.8",
     "expo-web-browser": "~14.0.2",
-    "firebase": "^11.4.0",
+    "firebase": "^11.5.0",
     "metro": "^0.81.0",
     "metro-config": "0.81.3",
     "metro-resolver": "0.81.3",

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { setCompleted, setNotCompleted } from '../../../contexts/TasksDB';
-import ModalNewTask from "../Screens/NewTask/ModalNewTask";
+import ModalNewTask from "../Modals/NewTask/ModalNewTask";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import dayjs from 'dayjs';

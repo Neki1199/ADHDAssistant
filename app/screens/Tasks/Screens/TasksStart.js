@@ -188,7 +188,7 @@ const useStyles = (theme) => StyleSheet.create({
         backgroundColor: "rgba(255, 255, 255, 0.6)",
         borderRadius: 15,
         width: "90%",
-        height: "85%",
+        height: "80%",
         justifyContent: "center",
         alignItems: "center"
     },

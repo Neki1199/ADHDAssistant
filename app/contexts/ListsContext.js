@@ -6,20 +6,20 @@ export const ListsContext = createContext();
 
 export const ListsProvider = ({ children }) => {
     const [allLists, setAllLists] = useState([]);
-    const unsuscribe = useRef(null);
+    const unsubscribe = useRef(null);
 
     useEffect(() => {
         // make sure to stop listening when log out (errors)
         const authChange = (user) => {
-            if (unsuscribe.current) {
-                unsuscribe.current();
-                unsuscribe.current = null;
+            if (unsubscribe.current) {
+                unsubscribe.current();
+                unsubscribe.current = null;
             }
             // when log out, clear
             if (user) {
-                unsuscribe.current = getAllLists(setAllLists)
+                unsubscribe.current = getAllLists(setAllLists)
             } else {
-                setAllLists([]); // clear when logout
+                setAllLists([]);
             }
         };
 
@@ -27,7 +27,7 @@ export const ListsProvider = ({ children }) => {
 
         return () => {
             listenAuth();
-            if (unsuscribe.current && typeof unsuscribe === "function") { unsuscribe.current(); }
+            if (unsubscribe.current && typeof unsubscribe === "function") { unsubscribe.current(); }
         };
     }, []);
 

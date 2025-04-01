@@ -11,85 +11,8 @@ import { removeNotification, removeRepeatNotifications, scheduleNotification } f
 import { DurationPicker } from "./DurationPicker";
 import { RepeatModalDelete } from "./RepeatModalDelete";
 import { DateTimePicker } from "./DateTimePicker";
-
-// get dates from repeat field, date is the starts field in repeat, not date from task
-export const getDatesRepeat = (date, repeat) => {
-    const datesRepeat = [];
-    const startDate = dayjs(date);
-    let currentDate = startDate;
-    const maxTasks = 30; // limit of tasks for never
-    const days = repeat.days;
-
-    const dayMap = {
-        "Mon": 0,
-        "Tue": 1,
-        "Wed": 2,
-        "Thu": 3,
-        "Fri": 4,
-        "Sat": 5,
-        "Sun": 6
-    };
-
-    // add intervals from starts
-    while (true) {
-        if (repeat.type === "Daily") {
-            datesRepeat.push(currentDate.format("YYYY-MM-DD"));
-            currentDate = currentDate.add(repeat.every, "day");
-        } else if (repeat.type === "Weekly") {
-            days.forEach(day => {
-                const dayIndex = dayMap[day]; // get day index
-                // add one more day (so its exact, as dayjs starts on sunday)
-                const oneDayMore = currentDate.day(dayIndex).add(1, "day");
-
-                if ((oneDayMore.isAfter(startDate) || oneDayMore.isSame(startDate))
-                    && ((oneDayMore.isBefore(repeat.ends) || oneDayMore.isSame(repeat.ends)))) {
-                    datesRepeat.push(oneDayMore.format("YYYY-MM-DD"));
-                }
-            });
-            currentDate = currentDate.add(repeat.every, "week");
-        } else if (repeat.type === "Monthly") {
-            // handle 30-31
-            if (repeat.dayMonth === "Last") {
-                currentDate = currentDate.endOf("month");
-            } else {
-                // get smaller day (if 31, get 28, or 30)
-                const daysInMonth = currentDate.daysInMonth();
-                const smallerDay = Math.min(repeat.dayMonth, daysInMonth);
-                currentDate = currentDate.date(smallerDay);
-            }
-            // break beforehand if its after
-            if (repeat.ends !== "Never" && currentDate.isAfter(dayjs(repeat.ends))) {
-                break;
-            }
-            datesRepeat.push(currentDate.format("YYYY-MM-DD"));
-
-            currentDate = currentDate.add(repeat.every, "month");
-        } else if (repeat.type === "Yearly") {
-            // break beforehand if year is after
-            if (repeat.ends !== "Never" && currentDate.isAfter(dayjs(repeat.ends))) {
-                break;
-            }
-            datesRepeat.push(currentDate.format("YYYY-MM-DD"));
-            currentDate = currentDate.add(repeat.every, "year");
-        }
-
-        if (repeat.ends === "Never") {
-            if (datesRepeat.length >= maxTasks) break;
-        } else if (repeat.ends !== "Never" && currentDate.isAfter(dayjs(repeat.ends))) {
-            break;
-        }
-    }
-    return datesRepeat;
-};
-
-// store the last repeat
-export const storeLastRepeat = async (lastRepeat) => {
-    try {
-        await AsyncStorage.setItem(`repeat_${lastRepeat.parentID}`, JSON.stringify(lastRepeat));
-    } catch (error) {
-        console.log("Could not store last repeat: ", error);
-    }
-};
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getDatesRepeat, storeLastRepeat } from "../../../../contexts/TasksDB";
 
 // task = null, when long press the task to change or delete
 // if null, is a new task, if not null, is being edited
@@ -125,8 +48,6 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
     const [time, setTime] = useState(task ? task.time : "");
     const [repeat, setRepeat] = useState(task ? task.repeat : { type: "Once" });
     const [otherList, setOtherList] = useState(task ? task.list : list);
-    const completed = (task ? task.completed : false);
-    const completedDate = (task ? task.completedDate : "");
 
     // also fields, but have the cancel icon to reset
     const [taskDetails, setTaskDetails] = useState({ // !! makes null false, if data true
@@ -155,14 +76,14 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
 
     // lists for the list details
     const getLists = () => {
-        const listsNoUpcoming = allLists.filter(list => list.id !== "Upcoming");
+        const listsNoUpcoming = allLists;
         return listsNoUpcoming;
     };
 
     const clearAll = () => {
         setName("");
         setOtherList(list);
-        setRepeat({ type: "Once" });;
+        setRepeat({ type: "Once" });
         setSelectedDate(dayjs().format("YYYY-MM-DD"));
         setTimeSelected("Set Time");
         setTime("");
@@ -358,6 +279,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                 // remove all repeated tasks and notif
                 await Promise.all([
                     deleteRepeatedTasks(task),
+                    await AsyncStorage.removeItem(`repeat_${parentID}`), // remove the last repeat stored
                     removeRepeatNotifications(parentID),
                     // remove main task
                     deleteTask(task, parentID)
@@ -382,7 +304,6 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
             setLoading(false);
         }
     };
-
 
     return (
         <Modal visible={modalVisible} transparent={true} animationType="none">

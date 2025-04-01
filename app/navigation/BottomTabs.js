@@ -1,16 +1,28 @@
 import React, { useContext } from 'react';
-import { TouchableOpacity, Text, Image } from 'react-native';
+import { TouchableOpacity, Image } from 'react-native';
 
 import AntDesign from "react-native-vector-icons/AntDesign";
 
 import DrawerHome from './Drawer';
 import { ListsTabs } from "./TaskTabs";
 import HelpScreen from "../screens/HelpTools/HelpScreen";
+import Disorganized from "../screens/HelpTools/Disorganized/Disorganized";
+
+import Overwhelmed from "../screens/HelpTools/Overwhelmed/Overwhelmed";
+
+import Unmotivated from "../screens/HelpTools/Unmotivated/Unmotivated";
+import Reward from "../screens/HelpTools/Unmotivated/Reward";
+import ProductiveMode from "../screens/HelpTools/Unmotivated/ProductiveMode";
+import OnBed from "../screens/HelpTools/Unmotivated/OnBed";
+
+import Stuck from "../screens/HelpTools/Stuck/Stuck";
 
 import { ThemeContext } from "../contexts/ThemeContext";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 const Tab = createBottomTabNavigator();
+const HelpStack = createNativeStackNavigator();
 
 const CustomTab = ({ children, accessibilityState, onPress }) => {
     const focused = accessibilityState.selected;
@@ -30,6 +42,68 @@ const CustomTab = ({ children, accessibilityState, onPress }) => {
             }}>
             {children}
         </TouchableOpacity>
+    )
+};
+
+const HelpStackScreens = () => {
+    const { theme } = useContext(ThemeContext);
+
+    return (
+        <HelpStack.Navigator
+            screenOptions={({ navigation }) => ({
+                headerTitleStyle: {
+                    fontFamily: "Zain-Regular",
+                    fontSize: 30,
+                    color: "#FFFFFF",
+                },
+                headerShadowVisible: false,
+                headerStyle: {
+                    backgroundColor: theme.header
+                },
+                animation: "slide_from_right",
+                headerTitleAlign: "center",
+                headerLeft: () => (
+                    <TouchableOpacity
+                        onPress={() => navigation.goBack()}
+                        style={{ paddingHorizontal: 15 }}
+                    >
+                        <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
+                    </TouchableOpacity>
+                )
+            })}>
+            <HelpStack.Screen name="HelpMain" component={HelpScreen} options={{ headerShown: false }} />
+            <HelpStack.Screen name="Unmotivated" component={Unmotivated}
+                options={{
+                    title: "I Feel Unmotivated",
+                }} />
+            <HelpStack.Screen name="Reward" component={Reward}
+                options={{
+                    title: "Set a Reward",
+                }} />
+            <HelpStack.Screen name="Productive" component={ProductiveMode}
+                options={{
+                    title: "Get in Productivity Mode",
+                }} />
+            <HelpStack.Screen name="OnBed" component={OnBed}
+                options={{
+                    title: "Still on Bed",
+                }} />
+
+            <HelpStack.Screen name="Overwhelmed" component={Overwhelmed}
+                options={{
+                    title: "I Feel Overwhelmed",
+                }} />
+
+            <HelpStack.Screen name="Stuck" component={Stuck}
+                options={{
+                    title: "I Feel Stuck",
+                }} />
+
+            <HelpStack.Screen name="Disorganized" component={Disorganized}
+                options={{
+                    title: "I Feel Disorganized",
+                }} />
+        </HelpStack.Navigator>
     )
 }
 
@@ -75,13 +149,13 @@ const BottomTabs = () => {
             />
             <Tab.Screen name="Tasks" component={ListsTabs}
                 initialParams={{ listID: "Daily" }}
-                options={({ navigation }) => ({
+                options={{
                     headerShown: false,
                     title: "My Tasks",
                     tabBarButton: (props) => <CustomTab {...props} />
-                })}
+                }}
             />
-            <Tab.Screen name="HelpTools" component={HelpScreen}
+            <Tab.Screen name="HelpTools" component={HelpStackScreens}
                 options={{
                     title: "Help Tools",
                     headerShown: false,

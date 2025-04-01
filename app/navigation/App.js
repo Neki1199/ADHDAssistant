@@ -12,20 +12,14 @@ import AntDesign from "react-native-vector-icons/AntDesign";
 import SignInScreen from '../screens/SignInScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import DrawerHome from './Drawer';
-import { ListsTabs } from "./TaskTabs";
 import TasksStart from "../screens/Tasks/Screens/TasksStart";
 import TaskTimer from "../screens/Tasks/Screens/TaskStartTimer";
 import DurationBreak from "../screens/Tasks/Screens/DurationBreak";
-import HelpScreen from "../screens/HelpTools/HelpScreen";
-import Disorganized from "../screens/HelpTools/Screens/Disorganized";
-import Overwhelmed from "../screens/HelpTools/Screens/Overwhelmed";
-import Unmotivated from "../screens/HelpTools/Screens/Unmotivated";
-import Stuck from "../screens/HelpTools/Screens/Stuck";
 
 import { ListsProvider } from "../contexts/ListsContext";
+import { TasksProvider } from "../contexts/TasksContext";
 import { ThemeContext, ThemeProvider } from "../contexts/ThemeContext";
 import BottomTabs from "./BottomTabs";
-
 
 SplashScreen.preventAutoHideAsync();
 
@@ -146,121 +140,6 @@ const StackScreens = () => {
                             backgroundColor: theme.header
                         }
                     })} />
-                <Stack.Screen name="Help" component={HelpScreen}
-                    options={({ navigation }) => ({
-                        title: "Tasks Help",
-                        animation: "slide_from_right",
-                        headerTitleAlign: "center",
-                        headerLeft: () => (
-                            <TouchableOpacity
-                                onPress={() => navigation.goBack()}
-                                style={{ paddingHorizontal: 15 }}
-                            >
-                                <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
-                            </TouchableOpacity>
-                        ),
-                        headerTitleStyle: {
-                            fontFamily: "Zain-Regular",
-                            fontSize: 30,
-                            color: "#FFFFFF",
-                        },
-                        headerShadowVisible: false,
-                        headerStyle: {
-                            backgroundColor: theme.header
-                        }
-                    })} />
-                <Stack.Screen name="Disorganized" component={Disorganized}
-                    options={({ navigation }) => ({
-                        title: "I Feel Disorganized",
-                        animation: "slide_from_right",
-                        headerTitleAlign: "center",
-                        headerLeft: () => (
-                            <TouchableOpacity
-                                onPress={() => navigation.goBack()}
-                                style={{ paddingHorizontal: 15 }}
-                            >
-                                <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
-                            </TouchableOpacity>
-                        ),
-                        headerTitleStyle: {
-                            fontFamily: "Zain-Regular",
-                            fontSize: 30,
-                            color: "#FFFFFF",
-                        },
-                        headerShadowVisible: false,
-                        headerStyle: {
-                            backgroundColor: theme.header
-                        }
-                    })} />
-                <Stack.Screen name="Overwhelmed" component={Overwhelmed}
-                    options={({ navigation }) => ({
-                        title: "I Feel Overwhelmed",
-                        animation: "slide_from_right",
-                        headerTitleAlign: "center",
-                        headerLeft: () => (
-                            <TouchableOpacity
-                                onPress={() => navigation.goBack()}
-                                style={{ paddingHorizontal: 15 }}
-                            >
-                                <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
-                            </TouchableOpacity>
-                        ),
-                        headerTitleStyle: {
-                            fontFamily: "Zain-Regular",
-                            fontSize: 30,
-                            color: "#FFFFFF",
-                        },
-                        headerShadowVisible: false,
-                        headerStyle: {
-                            backgroundColor: theme.header
-                        }
-                    })} />
-                <Stack.Screen name="Stuck" component={Stuck}
-                    options={({ navigation }) => ({
-                        title: "I Feel Stuck",
-                        animation: "slide_from_right",
-                        headerTitleAlign: "center",
-                        headerLeft: () => (
-                            <TouchableOpacity
-                                onPress={() => navigation.goBack()}
-                                style={{ paddingHorizontal: 15 }}
-                            >
-                                <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
-                            </TouchableOpacity>
-                        ),
-                        headerTitleStyle: {
-                            fontFamily: "Zain-Regular",
-                            fontSize: 30,
-                            color: "#FFFFFF",
-                        },
-                        headerShadowVisible: false,
-                        headerStyle: {
-                            backgroundColor: theme.header
-                        }
-                    })} />
-                <Stack.Screen name="Unmotivated" component={Unmotivated}
-                    options={({ navigation }) => ({
-                        title: "I Feel Unmotivated",
-                        animation: "slide_from_right",
-                        headerTitleAlign: "center",
-                        headerLeft: () => (
-                            <TouchableOpacity
-                                onPress={() => navigation.goBack()}
-                                style={{ paddingHorizontal: 15 }}
-                            >
-                                <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
-                            </TouchableOpacity>
-                        ),
-                        headerTitleStyle: {
-                            fontFamily: "Zain-Regular",
-                            fontSize: 30,
-                            color: "#FFFFFF",
-                        },
-                        headerShadowVisible: false,
-                        headerStyle: {
-                            backgroundColor: theme.header
-                        }
-                    })} />
             </Stack.Navigator>
         </>
     );
@@ -305,13 +184,15 @@ export default function App() {
     return (
         <ThemeProvider>
             <ListsProvider>
-                <GestureHandlerRootView>
-                    <SafeAreaView style={{ flex: 1 }}>
-                        <NavigationContainer>
-                            <StackScreens />
-                        </NavigationContainer>
-                    </SafeAreaView>
-                </GestureHandlerRootView>
+                <TasksProvider>
+                    <GestureHandlerRootView>
+                        <SafeAreaView style={{ flex: 1 }}>
+                            <NavigationContainer>
+                                <StackScreens />
+                            </NavigationContainer>
+                        </SafeAreaView>
+                    </GestureHandlerRootView>
+                </TasksProvider>
             </ListsProvider>
         </ThemeProvider>
     );

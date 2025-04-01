@@ -1,7 +1,7 @@
-import { ActivityIndicator, Text, View, Modal, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
+import { ActivityIndicator, Text, View, Modal, TouchableOpacity, StyleSheet, Image, Alert, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { auth } from '../../firebaseConfig';
-import { onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { TextInput } from 'react-native-gesture-handler';
 
 export default function SignInScreen({ navigation }) {
@@ -13,10 +13,10 @@ export default function SignInScreen({ navigation }) {
   const [logginIn, setLogginIn] = useState(false); // loading in login button
 
   useEffect(() => {
-    const stayConnected = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       if (currentUser) {
         if (currentUser.emailVerified) {
-          navigation.replace("Tabs");
+          navigation.replace("Tabs"); // user is logged in, go to home
         } else {
           navigation.navigate("SignIn");
           setCheckAuth(false); // do not show loading, go to login
@@ -26,8 +26,8 @@ export default function SignInScreen({ navigation }) {
         navigation.navigate("SignIn");
       }
     });
-    return () => stayConnected();
-  }, [navigation]);
+    return unsubscribe; // clean up when auth change
+  }, []);
 
   // to sign in
   const signIn = async () => {
@@ -111,54 +111,57 @@ export default function SignInScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
-      <Image
-        source={require('../../assets/images/logoADHD.png')}
-        style={styles.img} />
-      <Text style={styles.title}>Welcome</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail} />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword} secureTextEntry />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
 
-      <TouchableOpacity style={[styles.button, styles.btnLogin]} onPress={signIn} disabled={logginIn}>
-        {logginIn ? <ActivityIndicator size="small" color="#6D67BD" /> : <Text style={styles.btnTextLogIn}>Log In</Text>}
-      </TouchableOpacity>
-      <TouchableOpacity style={[styles.button, styles.btnCreate]} onPress={() => navigation.navigate("SignUp")}>
-        <Text style={styles.btnText}>Create Account</Text>
-      </TouchableOpacity>
+      <View style={styles.container}>
+        <Image
+          source={require('../../assets/images/logoADHD.png')}
+          style={styles.img} />
+        <Text style={styles.title}>Welcome</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail} />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword} secureTextEntry />
 
-      <TouchableOpacity style={styles.forgot} onPress={() => setForgotPasswordVisible(true)}>
-        <Text style={styles.textPassword} >Forgot Password?</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={[styles.button, styles.btnLogin]} onPress={signIn} disabled={logginIn}>
+          {logginIn ? <ActivityIndicator size="small" color="#6D67BD" /> : <Text style={styles.btnTextLogIn}>Log In</Text>}
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.button, styles.btnCreate]} onPress={() => navigation.navigate("SignUp")}>
+          <Text style={styles.btnText}>Create Account</Text>
+        </TouchableOpacity>
 
-      <Modal transparent={true} visible={forgotPasswordVisible} animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalInside}>
-            <Text style={styles.modalTitle}>Reset Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              value={resetEmail}
-              onChangeText={setResetEmail}
-            />
+        <TouchableOpacity style={styles.forgot} onPress={() => setForgotPasswordVisible(true)}>
+          <Text style={styles.textPassword} >Forgot Password?</Text>
+        </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.button, styles.btnCreate]} onPress={forgotPassword}>
-              <Text style={styles.btnText}>Send Reset Link</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setForgotPasswordVisible(false)}>
-              <Text style={styles.closeModal}>Cancel</Text>
-            </TouchableOpacity>
+        <Modal transparent={true} visible={forgotPasswordVisible} animationType="slide">
+          <View style={styles.modalContainer}>
+            <View style={styles.modalInside}>
+              <Text style={styles.modalTitle}>Reset Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your email"
+                value={resetEmail}
+                onChangeText={setResetEmail}
+              />
+
+              <TouchableOpacity style={[styles.button, styles.btnCreate]} onPress={forgotPassword}>
+                <Text style={styles.btnText}>Send Reset Link</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setForgotPasswordVisible(false)}>
+                <Text style={styles.closeModal}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </Modal>
-    </View>
+        </Modal>
+      </View>
+    </TouchableWithoutFeedback>
   )
 }
 

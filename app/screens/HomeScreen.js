@@ -2,14 +2,14 @@ import * as SystemUI from "expo-system-ui";
 import React, { useContext, useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import EmotionsHome from "../screens/Emotions/Components/EmotionsHome";
-import TasksHome from "../screens/Tasks/Components/TasksHome"
+import TasksHome from "../screens/Tasks/Components/TasksHome";
+import RewardsHome from "./Tasks/Components/RewardsHome";
+
 import { LinearGradient } from "expo-linear-gradient";
 import { ThemeContext } from "../contexts/ThemeContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
-import { getDatesRepeat, storeLastRepeat } from "./Tasks/Screens/NewTask/ModalNewTask";
-import { addTask } from "../contexts/TasksDB";
-import { scheduleNotification } from "./Tasks/Screens/NewTask/Notifications";
+import { addMoreRepeatedTasks } from "../contexts/TasksDB";
 
 export default function HomeScreen({ navigation }) {
   const { theme } = useContext(ThemeContext);
@@ -22,60 +22,6 @@ export default function HomeScreen({ navigation }) {
     };
     setBackground();
   }, []);
-
-  // to add more repeated tasks
-  const addMoreRepeatedTasks = async () => {
-    const currentDate = dayjs().format("YYYY-MM-DD");
-
-    try {
-      const keys = await AsyncStorage.getAllKeys();
-      // get all keys from repeat tasks
-      const repeatKeys = keys.filter(key => key.startsWith("repeat_"));
-      const tasks = await AsyncStorage.multiGet(repeatKeys);
-      const repeatedTasks = tasks.map(([key, value]) => ({
-        key,
-        task: JSON.parse(value)
-      }));
-
-      for (const task of repeatedTasks) {
-        const taskData = task.task;
-        // add more tasks when there is less than 10 days for the last task
-        if (dayjs(taskData.date).diff(dayjs(currentDate), "day") < 10) {
-          // add more repeated tasks
-          let dateValue = taskData.date; // start day from this task
-          let datesRepeat = getDatesRepeat(dateValue, taskData.repeat);
-          const repeated = [];
-
-          for (const dateRepeat of datesRepeat) {
-            // add repeated tasks, but if starts is == to task date, do not add (to not create same task twice)
-            if (dateRepeat !== taskData.date) {
-              const newTask = await addTask(taskData.name, dateRepeat, taskData.time, taskData.reminder,
-                taskData.repeat, taskData.duration, false,
-                taskData.list, "", taskData.parentID);
-
-              repeated.push(newTask.data);
-
-              // add notification
-              if (taskData.reminder && taskData.date) {
-                const reminderTime = dayjs(`${dateRepeat} ${taskData.reminder}`, "YYYY-MM-DD HH:mm").toDate();
-                scheduleNotification(reminderTime, `Remember your task "${taskData.name}". Starts at ${taskData.reminder}`, taskData.parentID, newTask.id);
-              }
-            }
-          }
-          // remove from asyncstorage the last task and add new last task
-          await AsyncStorage.removeItem(task.key);
-
-          const lastTask = repeated[repeated.length - 1];
-          if ((lastTask.repeat.ends !== "Never" && dayjs(lastTask.date).isBefore(lastTask.repeat.ends))
-            || lastTask.repeat.ends === "Never") {
-            storeLastRepeat(lastTask);
-          }
-        }
-      }
-    } catch (error) {
-      console.log("Could not add more repeated tasks, :", error);
-    }
-  };
 
   // to only run once per day add more repeated
   useEffect(() => {
@@ -99,6 +45,7 @@ export default function HomeScreen({ navigation }) {
         style={styles.gradient}>
         <EmotionsHome />
         <TasksHome />
+        <RewardsHome navigation={navigation} />
       </LinearGradient>
     </View >
 

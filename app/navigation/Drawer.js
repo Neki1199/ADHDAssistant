@@ -31,7 +31,7 @@ export default function DrawerHome({ navigation }) {
 
     // sign out function
     const handleSignOut = async () => {
-        await signOut(auth);
+        await auth.signOut();
         navigation.reset({
             index: 0,
             routes: [{ name: "SignIn" }]

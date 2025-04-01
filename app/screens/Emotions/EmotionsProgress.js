@@ -50,11 +50,12 @@ const EmotionsProgress = () => {
     useEffect(() => {
         const [year, month] = currentMonth.split("-");
 
-        const unsuscribe = getEmotionsMonth(month, year, setAllEmotions);
+        const unsubscribe = getEmotionsMonth(month, year, setAllEmotions);
         // clean up when unmont
         return () => {
-            if (unsuscribe && typeof unsuscribe === "function") unsuscribe();
-
+            if (unsubscribe && typeof unsubscribe === "function") {
+                unsubscribe();
+            }
         };
     }, [currentMonth]);
 

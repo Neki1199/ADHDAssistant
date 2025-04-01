@@ -5,7 +5,7 @@ import { CircularProgress } from 'react-native-circular-progress';
 import { ListsContext } from "../../../contexts/ListsContext";
 import { ThemeContext } from '../../../contexts/ThemeContext';
 import { AntDesign } from '@expo/vector-icons';
-import ModalNewTask from '../Screens/NewTask/ModalNewTask';
+import ModalNewTask from '../Modals/NewTask/ModalNewTask';
 import { AddList } from '../Modals/AddList';
 
 const TasksItemHome = ({ listID }) => {
@@ -15,8 +15,8 @@ const TasksItemHome = ({ listID }) => {
 
   // onsanpshot to get updates from lists and tasks
   useEffect(() => {
-    const unsuscribe = getProgress(listID, setProgress);
-    return () => { if (unsuscribe && typeof unsuscribe === "function") { unsuscribe(); } }
+    const unsubscribe = getProgress(listID, setProgress);
+    return () => { if (unsubscribe && typeof unsubscribe === "function") { unsubscribe(); } }
   }, [listID]);
 
   return (
@@ -59,7 +59,7 @@ export default function TasksHome() {
           horizontal={true}
           data={[
             ...allLists.filter(list => list.id === "Daily"), // daily first!
-            ...allLists.filter(list => list.id !== "Daily" && list.id !== "Upcoming")
+            ...allLists.filter(list => list.id !== "Daily")
           ]}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (

@@ -1,10 +1,11 @@
-import { Text, View, TouchableOpacity, Alert, StyleSheet, Image } from "react-native";
+import { Text, View, TouchableOpacity, Alert, StyleSheet, Image, TouchableWithoutFeedback, Keyboard } from "react-native";
 import React, { useState } from "react";
 import { auth, db } from "../../firebaseConfig";
 import { updateProfile, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { TextInput } from "react-native-gesture-handler";
 import { setDoc, doc } from "firebase/firestore";
 import { addNewList } from "../contexts/TasksDB";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function SignUpScreen({ navigation }) {
   const [name, setName] = useState("");
@@ -52,6 +53,9 @@ export default function SignUpScreen({ navigation }) {
         Total: 0
       });
       await addNewList("Daily");
+      await AsyncStorage.setItem("rewards", JSON.stringify(["Drink a coffee", "Take a nap", "Eat chocolate",
+        "Take a bath", "Watch an episode of a TV show"
+      ]));
 
       // go to sign in screen after success sign up
       if (userCredential) navigation.navigate("SignIn");
@@ -80,32 +84,34 @@ export default function SignUpScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Image
-        source={require("../../assets/images/logoADHD.png")}
-        style={styles.img} />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <View style={styles.container}>
+        <Image
+          source={require("../../assets/images/logoADHD.png")}
+          style={styles.img} />
 
-      <Text style={styles.title}>Create Account</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Name"
-        value={name}
-        onChangeText={setName} />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail} />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword} />
+        <Text style={styles.title}>Create Account</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Name"
+          value={name}
+          onChangeText={setName} />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail} />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword} />
 
-      <TouchableOpacity style={[styles.button, styles.btnCreate]} onPress={signUp}>
-        <Text style={styles.btnText}>Create Account</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity style={[styles.button, styles.btnCreate]} onPress={signUp}>
+          <Text style={styles.btnText}>Create Account</Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 

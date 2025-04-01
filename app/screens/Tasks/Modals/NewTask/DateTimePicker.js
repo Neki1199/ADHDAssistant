@@ -67,7 +67,7 @@ export const DateTimePicker = ({ modalDateTime, closeDateTime, changeDateTime, c
                             <TouchableOpacity onPress={() => resetTime()}
                                 style={styles.btn}
                             >
-                                <AntDesign name="close" size={20} color={theme.tabText} />
+                                <AntDesign name="closecircle" size={30} color={theme.tabText} />
                             </TouchableOpacity>
                         )}
                     </View>
@@ -109,7 +109,6 @@ const useStyles = (theme) => StyleSheet.create({
         marginTop: 20,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: theme.primary,
         borderRadius: 30,
         width: 30,
         height: 30,

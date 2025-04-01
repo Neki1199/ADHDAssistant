@@ -4,6 +4,7 @@ import { doc, updateDoc, getDoc, setDoc, arrayUnion } from '@firebase/firestore'
 import { db, auth } from "../../../../firebaseConfig";
 import dayjs from "dayjs";
 import { ThemeContext } from '../../../contexts/ThemeContext';
+import { AntDesign } from '@expo/vector-icons';
 
 export default function EmotionsHome() { // home emotions emoji
   const [selectedEmotion, setSelectedEmotion] = useState(null);
@@ -73,8 +74,18 @@ export default function EmotionsHome() { // home emotions emoji
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <View style={styles.modalContainer}>
             <View style={styles.modalInside}>
-              <Text style={styles.modalTitle}>{
-                selectedEmotion ? `Why are you feeling ${selectedEmotion.emoji}?` : "Select an emotion"}</Text>
+
+              <View style={styles.topModal}>
+                <TouchableOpacity onPress={() => { setVisibleModal(false), setNote("") }}>
+                  <AntDesign name="close" size={26} color={theme.name === "light" ? "#4B4697" : "#FFFFFF"} />
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>{
+                  selectedEmotion ? `Why are you feeling ${selectedEmotion.emoji}?` : "Select an emotion"}</Text>
+                <TouchableOpacity onPress={() => storeEmotion(selectedEmotion)}>
+                  <AntDesign name="checkcircle" size={26} color={theme.name === "light" ? "#4B4697" : "#FFFFFF"} />
+                </TouchableOpacity>
+              </View>
+
               <TextInput
                 style={styles.noteInput}
                 placeholder="Add and optional note"
@@ -83,14 +94,6 @@ export default function EmotionsHome() { // home emotions emoji
                 placeholderTextColor={theme.text}
                 autoFocus={true}
               />
-              <View style={styles.buttonsModal}>
-                <TouchableOpacity style={[styles.buttons, { backgroundColor: theme.name === "light" ? "#B90000" : "#56546F" }]} onPress={() => { setVisibleModal(false), setNote("") }}>
-                  <Text style={styles.btnText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.buttons, { backgroundColor: theme.name === "light" ? "#4B4697" : "#2A2572" }]} onPress={() => storeEmotion(selectedEmotion)}>
-                  <Text style={styles.btnText}>Done</Text>
-                </TouchableOpacity>
-              </View>
             </View>
           </View>
         </TouchableWithoutFeedback>
@@ -114,6 +117,11 @@ const useStyles = (theme) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4
+  },
+  topModal: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-between"
   },
   textEmotions: {
     color: theme.tabText,
@@ -149,22 +157,5 @@ const useStyles = (theme) => StyleSheet.create({
     marginBottom: 10,
     padding: 10,
     color: theme.text
-  },
-  buttonsModal: {
-    flexDirection: "row",
-    margin: 10,
-    width: "100%",
-    justifyContent: "space-around",
-  },
-  buttons: {
-    width: 100,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  btnText: {
-    color: "#FFFFFF",
-    fontWeight: "500"
-  },
+  }
 })

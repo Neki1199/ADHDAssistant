@@ -1,36 +1,22 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator, FlatList, ScrollView, TouchableOpacity, Image, Modal, TouchableWithoutFeedback } from 'react-native';
-import { getTasks, deleteAllCompleted } from '../../../contexts/TasksDB';
+import { deleteAllCompleted } from '../../../contexts/TasksDB';
 import { LinearGradient } from 'expo-linear-gradient';
-import ModalNewTask from "./NewTask/ModalNewTask";
+import ModalNewTask from "../Modals/NewTask/ModalNewTask";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AntDesign from "react-native-vector-icons/AntDesign";
 import dayjs from 'dayjs';
 import TaskItem from '../Components/TaskItem';
 import { ModalStart } from '../Modals/ModalStart';
 import { ThemeContext } from '../../../contexts/ThemeContext';
+import { TasksContext } from '../../../contexts/TasksContext';
 import { AddList } from '../Modals/AddList';
-
-export const sortTasks = (tasks) => {
-    return tasks.sort((a, b) => {
-        // create date time, if time exists append T to create time object (ISO format) / handle no dates with a further date
-        const aDate = a.date ? dayjs(`${a.date}${a.time ? `T${a.time}` : ""}`) : dayjs("9999-12-31");
-        const bDate = b.date ? dayjs(`${b.date}${b.time ? `T${b.time}` : ""}`) : dayjs("9999-12-31");
-
-        // if a and b are the same date
-        if (aDate.isSame(bDate, "day")) {
-            if (!a.time) return 1; // if no time, a after b
-            if (!b.time) return -1; // if no time, b after a
-            return aDate.isBefore(bDate) ? -1 : 1; // if both have time compare complete dates
-        }
-        // if dates not the same compare directly (-1 a before b, 1 a after b)
-        return aDate.isBefore(bDate) ? -1 : 1;
-    })
-};
 
 const ListTasks = ({ route, navigation }) => {
     const { listID } = route.params;
     const { theme } = useContext(ThemeContext);
+    const { setListsNums, getTasksList } = useContext(TasksContext); // to set the badge nums
+
     const styles = useStyles(theme);
 
     const [tasks, setTasks] = useState([]);
@@ -46,15 +32,24 @@ const ListTasks = ({ route, navigation }) => {
     const [modalStart, setModalStart] = useState(false);
     const [showButtons, setShowButtons] = useState(false);
 
+    // retrieve tasks for this list
     useEffect(() => {
-        const unsuscribe = getTasks(listID, (newTasks) => {
-            // order tasks by past, current, and upcoming
-            const sortedTasks = sortTasks(newTasks);
-            setTasks(sortedTasks);
+        getTasksList(listID, (retrievedTasks) => {
+            setTasks(retrievedTasks);
             setLoading(false);
         });
-        return () => { if (unsuscribe && typeof unsuscribe === "function") { unsuscribe(); } }
     }, [listID]); // change every time listID change
+
+    // set badge num of uncompleted tasks
+    useEffect(() => {
+        const badgeNum = dailyBeforeEqual.length;
+
+        setListsNums(prevLists => ({
+            ...prevLists,
+            [listID]: badgeNum
+        }));
+    }, [tasks]);
+
 
     // use AsyncStorage to get and store showCompleted state
     useEffect(() => {
@@ -142,34 +137,34 @@ const ListTasks = ({ route, navigation }) => {
                                 } />
                         </TouchableOpacity>
                     </View>
-                    {loading ? (
-                        <ActivityIndicator size="large" color="#7D79C0" />
-                    ) : (
-                        // uncompleted tasks
-                        <FlatList
-                            style={styles.flatlist}
-                            data={dailyBeforeEqual}
-                            keyExtractor={item => `${item.id}-${item.date}`}
-                            renderItem={({ item }) => (
-                                <TaskItem item={item} navigation={navigation} />
-                            )}
-                            scrollEnabled={false}
-                            ListEmptyComponent={
-                                //  incompleted tasks
-                                dailyAllTasksCompleted && filteredTasks.completed.length > 0 ? (
-                                    // image all completed!
-                                    <Image
-                                        source={require("../../../../assets/images/completed.png")}
-                                        style={styles.img} />
+
+                    <FlatList
+                        style={styles.flatlist}
+                        data={dailyBeforeEqual}
+                        keyExtractor={item => `${item.id}-${item.date}`}
+                        renderItem={({ item }) => (
+                            <TaskItem item={item} navigation={navigation} />
+                        )}
+                        scrollEnabled={false}
+                        ListEmptyComponent={
+                            //  uncompleted tasks
+                            dailyAllTasksCompleted && filteredTasks.completed.length > 0 ? (
+                                // image all completed!
+                                <Image
+                                    source={require("../../../../assets/images/completed.png")}
+                                    style={styles.img} />
+                            ) : (
+                                loading ? (
+                                    <ActivityIndicator size="large" color="#7D79C0" />
                                 ) : (
                                     // image user has not added a task yet
                                     <Image
                                         source={require("../../../../assets/images/addTask.png")}
                                         style={styles.img} />
                                 )
-                            }
-                        />
-                    )}
+                            )
+                        }
+                    />
 
                     {/* hide or show completed tasks */}
                     <View style={styles.touchShowComplete}>

@@ -20,7 +20,7 @@ const mostUsedEmoji = (emotions) => {
 };
 
 
-// get emotions from firestore and store in mmkv storage (prev months)
+// get emotions from firestore and cache (prev months)
 export const getEmotionsDB = async (startDate, endDate, setAllEmotions, cacheTime) => {
     const userID = auth.currentUser?.uid;
     if (!userID) return () => { };
@@ -29,7 +29,7 @@ export const getEmotionsDB = async (startDate, endDate, setAllEmotions, cacheTim
     const resultQuery = query(emotionsRef, where("__name__", ">=", startDate), where("__name__", "<=", endDate));
 
     // to listen for changes in the month
-    const unsuscribe = onSnapshot(resultQuery, async (snapshot) => {
+    const unsubscribe = onSnapshot(resultQuery, async (snapshot) => {
         const allData = {};
         try {
             snapshot.docs.forEach((doc) => {
@@ -69,6 +69,8 @@ export const getEmotionsDB = async (startDate, endDate, setAllEmotions, cacheTim
                 [{ text: "Try Again", style: "default" }]
             );
         }
+    }, error => {
+        console.error("Error in getEmotionsDB:", error);
     });
-    return unsuscribe;
+    return unsubscribe;
 };

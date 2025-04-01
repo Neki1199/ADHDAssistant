@@ -1,18 +1,33 @@
-import React, { useState, useEffect, useContext, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { View, StyleSheet, Text, FlatList, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { getUncompletedMonth } from '../../../contexts/TasksDB';
 import { ListsContext } from "../../../contexts/ListsContext";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Calendar } from "react-native-calendars";
 import { AntDesign } from '@expo/vector-icons';
-import { sortTasks } from './TabLists';
+import { sortTasks, TasksContext } from '../../../contexts/TasksContext';
 import TaskItem from "../Components/TaskItem";
 import dayjs from "dayjs";
 import { ThemeContext } from '../../../contexts/ThemeContext';
 
+
+export const setColour = (allLists) => {
+    const colours = ["#CC0000", "#FF8000", "#FFD546", "#66CC00", "#0080FF", "#7F00FF", "#3399FF", "#F253A3"]
+    const getColour = (index) => colours[index % colours.length];
+    // add a colour to each list
+    const listColours = allLists
+        .reduce((all, list, index) => {
+            all[list.id] = getColour(index);
+            return all;
+        }, {});
+    return listColours;
+};
+
 const ListUpcoming = ({ navigation }) => {
     const { allLists } = useContext(ListsContext);
     const { theme } = useContext(ThemeContext);
+    const listColours = setColour(allLists);
+
     const styles = useStyles(theme);
     const [showCalendar, setShowCalendar] = useState(true);
     const [showNoDueDate, setShowNoDueDate] = useState(false);
@@ -24,76 +39,64 @@ const ListUpcoming = ({ navigation }) => {
     const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
     const [currentMonth, setCurrentMonth] = useState(dayjs().format("YYYY-MM"));
     const [calendarKey, setCalendarKey] = useState(0);
-
-    const markedDates = useRef({}); // use same dots if no changes
-    const cachedData = useRef({}); // use same data if there is no change
-
-    const colours = ["#CC0000", "#FF8000", "#FFD546", "#66CC00", "#0080FF", "#7F00FF", "#3399FF", "#F253A3"]
-    const getColour = (index) => colours[index % colours.length];
-    // add a colour to each list
-    const listColours = allLists
-        .filter(list => list.id !== "Upcoming")
-        .reduce((all, list, index) => {
-            all[list.id] = getColour(index);
-            return all;
-        }, {});
+    const [markedDates, setMarkedDates] = useState({});
 
     // update calendar theme when theme changes
     useEffect(() => {
         setCalendarKey((prev) => prev + 1);
     }, [theme]);
 
-    const getMonthTasks = async (month, year) => {
-        const dateCache = `${year}-${month}`;
-        // use ref data if there is
-        if (cachedData.current[dateCache]) {
-            setTasks(cachedData.current[dateCache]);
-            return;
-        }
-
+    // get tasks when month changes
+    useEffect(() => {
+        const [year, month] = currentMonth.split("-");
         try {
             // get month data if not cached
-            const lists = allLists.filter(list => list.id !== "Upcoming");
-            const unsuscribeAll = [];
+            const unsubscribeAll = [];
 
-            // get all tasks from each list
-            const getAllTasks = lists.map(eachList =>
-                new Promise((resolve) => {
-                    const unsuscribe = getUncompletedMonth(eachList.id, year, month, (resultTasks) => {
-                        setTasks(prevTasks => {
-                            const newTasks = { ...prevTasks, [eachList.id]: resultTasks };
-                            cachedData.current[dateCache] = newTasks; // store on ref
-                            return newTasks;
-                        });
-                        resolve();
-                    });
-                    unsuscribeAll.push(unsuscribe); // add all unsuscribe
-                })
-            );
+            // execute all promises before continuing
+            allLists.forEach(eachList => {
+                const unsubscribe = getUncompletedMonth(eachList.id, year, month,
+                    // get dated tasks
+                    (newDatedTasks) => {
+                        setTasks(prevTasks => ({
+                            ...prevTasks, // keep existing lists
+                            [eachList.id]: [
+                                ...newDatedTasks, // update with new dated tasks
+                                // keep undated as they are
+                                ...(prevTasks[eachList.id]?.filter(task => task.date === "") || [])
+                            ]
+                        }));
+                    },
+                    // get undated tasks
+                    (newUndatedTasks) => {
+                        setTasks(prevTasks => ({
+                            ...prevTasks,
+                            [eachList.id]: [
+                                ...(prevTasks[eachList.id]?.filter(task => task.date !== "") || []),
+                                ...newUndatedTasks
+                            ]
+                        }));
+                    }
+                );
+                unsubscribeAll.push(unsubscribe);
+            });
 
-            await Promise.all(getAllTasks); // wait for all tasks to be retrieved
             // clean up
             return () => {
-                unsuscribeAll.forEach(unsuscribe => {
-                    if (unsuscribe && typeof unsuscribe === "function") {
-                        unsuscribe();
+                unsubscribeAll.forEach(unsubscribe => {
+                    if (unsubscribe && typeof unsubscribe === "function") {
+                        unsubscribe();
                     }
                 });
             };
         } catch (error) {
             console.log("Error getting month data: ", error);
         }
-    };
-
-    // get tasks when month changes
-    useEffect(() => {
-        const [year, month] = currentMonth.split("-");
-        getMonthTasks(month, year);
     }, [currentMonth]);
 
     // recalculate marked dates when tasks change
     useEffect(() => {
-        markedDates.current = getMarkedDates;
+        setMarkedDates(getMarkedDates());
     }, [tasks]);
 
     // set tasks to show on flatlist
@@ -107,17 +110,15 @@ const ListUpcoming = ({ navigation }) => {
             sortedUncompleted.forEach(task => {
                 if (task.date === "") {
                     newUndatedTasks.push(task);
-                    return;
                 } else if (task.date === selectedDate) {
                     uncompletedTasks.push(task);
                 }
             });
         });
-
-        markedDates.current = getMarkedDates;
         // add undated tasks, and set tasks for the selected date
         setUndatedTasks(newUndatedTasks);
         setSelectedDateTasks(uncompletedTasks);
+
     }, [tasks, selectedDate]);
 
     const dayPress = useCallback((day) => {
@@ -139,7 +140,7 @@ const ListUpcoming = ({ navigation }) => {
     };
 
     // make dots for dates and empty dates [] for the loading to work
-    const getMarkedDates = useMemo(() => {
+    const getMarkedDates = () => {
         const dates = {};
         const [year, month] = currentMonth.split("-");
         const daysMonth = dayjs(`${year}-${month}`).daysInMonth(); // get all days in the month
@@ -152,9 +153,10 @@ const ListUpcoming = ({ navigation }) => {
         Object.entries(tasks).forEach(([listName, taskList]) => {
             taskList.forEach(task => {
                 if (task.date !== "") {
-                    if (!dates[task.date]) {
+                    if (!dates[task.date]) { // if date list does not exist
                         dates[task.date] = { dots: [] };
                     }
+
                     // check if that dot has been already added
                     if (!dates[task.date].dots.some(dot => dot.key === listName)) {
                         dates[task.date].dots.push({
@@ -166,7 +168,7 @@ const ListUpcoming = ({ navigation }) => {
             });
         });
         return dates;
-    }, [tasks, currentMonth]);
+    };
 
     return (
         <LinearGradient
@@ -184,9 +186,9 @@ const ListUpcoming = ({ navigation }) => {
                             firstDay={1}
                             displayLoadingIndicator={true}
                             markedDates={{
-                                ...markedDates.current,
+                                ...markedDates,
                                 [selectedDate]: {
-                                    ...markedDates.current[selectedDate],
+                                    ...markedDates[selectedDate],
                                     selected: true
                                 }
                             }}
@@ -255,7 +257,10 @@ const ListUpcoming = ({ navigation }) => {
 
                     {/* hide or show dated tasks */}
                     <View style={styles.touchShowComplete}>
-                        <Text style={styles.sectionTitle}>Tasks {dayjs(selectedDate).format("dddd MMM YYYY")}</Text>
+                        <Text style={styles.sectionTitle}>Tasks {
+                            dayjs(selectedDate).isSame(currentMonth, "month")
+                                ? `${dayjs(selectedDate).format("DD MMMM YYYY")}` : `${dayjs(currentMonth).format("MMMM YYYY")}`
+                        }</Text>
                         <TouchableOpacity onPress={() => setShowDate(!showDate)} style={{ flexDirection: "row" }}>
                             <View style={styles.number}>
                                 <Text style={{ fontSize: 12, color: theme.text }}>

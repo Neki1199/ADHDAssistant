@@ -46,6 +46,7 @@ export const AddList = ({ modalVisible, setModalVisible, listName, setListName }
                         value={listName}
                         onChangeText={setListName}
                         placeholderTextColor={theme.text}
+                        autoFocus={true}
                     />
                 </View>
             </View>
@@ -83,6 +84,7 @@ const useStyles = (theme) => StyleSheet.create({
         fontFamily: "Zain-Regular",
         fontSize: 20,
         width: "90%",
+        height: 66,
         backgroundColor: theme.input,
         borderRadius: 20,
         padding: 20,

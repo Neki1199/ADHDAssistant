@@ -3,7 +3,6 @@ import { View, StyleSheet, Text, TouchableOpacity, Modal } from "react-native";
 import { deleteTask, deleteRepeatedTasks } from "../../../../contexts/TasksDB";
 import { ThemeContext } from "../../../../contexts/ThemeContext";
 import { removeNotification, removeRepeatNotifications } from "./Notifications";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const RepeatModalDelete = ({ modalDelete, setModalDelete, task }) => {
     const { theme } = useContext(ThemeContext);
@@ -15,7 +14,6 @@ export const RepeatModalDelete = ({ modalDelete, setModalDelete, task }) => {
         removeRepeatNotifications(parentID);
         deleteTask(task, parentID);
         setModalDelete(false);
-        await AsyncStorage.removeItem(`repeat_${parentID}`);
     };
 
     return (
