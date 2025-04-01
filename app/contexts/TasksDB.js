@@ -625,7 +625,6 @@ export const getTasksProgress = async (setProgress) => {
         return unsubscribe;
     } catch (error) {
         console.log("Error retrieving tasks progress: ", error)
-        return () => { };
     };
 };
 

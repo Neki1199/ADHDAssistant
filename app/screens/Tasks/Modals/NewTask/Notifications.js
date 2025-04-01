@@ -1,5 +1,13 @@
 import * as Notifications from "expo-notifications";
 
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+    }),
+});
+
 // when added task, schedule notification
 export const scheduleNotification = async (date, message, parentID, taskID) => {
     try {
@@ -14,7 +22,10 @@ export const scheduleNotification = async (date, message, parentID, taskID) => {
                 sound: "notification.wav",
                 data: { parentID }
             },
-            trigger: { type: "date", timestamp: date },
+            trigger: {
+                type: Notifications.SchedulableTriggerInputTypes.DATE,
+                date: date
+            },
             identifier: taskID
         });
     } catch (error) {

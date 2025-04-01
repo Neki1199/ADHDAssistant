@@ -35,7 +35,7 @@ export default function SignUpScreen({ navigation }) {
       const userRef = doc(db, "users", user.uid);
       // save user in firestore (email and date creation)
       await setDoc(userRef, {
-        name: name,
+        name: name.trim(),
         email: user.email,
         created: new Date(),
       });

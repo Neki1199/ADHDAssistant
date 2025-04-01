@@ -14,8 +14,8 @@ const TasksProgress = () => {
         return () => { if (unsubscribe && typeof unsubscribe === "function") { unsubscribe(); } }
     }, []);
 
-    const listsProgress = Object.entries(progress).filter(([name, value]) => name !== "Total");
-    const lastListName = listsProgress[listsProgress.length - 1][0];
+    const listsProgress = Object.entries(progress)?.filter(([name, value]) => name !== "Total");
+    const lastListName = listsProgress.length > 0 ? listsProgress[listsProgress.length - 1][0] : null;
 
     return (
         <View style={styles.container}>

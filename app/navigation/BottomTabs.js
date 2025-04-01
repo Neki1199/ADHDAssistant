@@ -6,8 +6,7 @@ import AntDesign from "react-native-vector-icons/AntDesign";
 import DrawerHome from './Drawer';
 import { ListsTabs } from "./TaskTabs";
 import HelpScreen from "../screens/HelpTools/HelpScreen";
-import Disorganized from "../screens/HelpTools/Disorganized/Disorganized";
-
+import Disorganised from "../screens/HelpTools/Disorganised/Disorganised";
 import Overwhelmed from "../screens/HelpTools/Overwhelmed/Overwhelmed";
 
 import Unmotivated from "../screens/HelpTools/Unmotivated/Unmotivated";
@@ -99,7 +98,7 @@ const HelpStackScreens = () => {
                     title: "I Feel Stuck",
                 }} />
 
-            <HelpStack.Screen name="Disorganized" component={Disorganized}
+            <HelpStack.Screen name="Disorganised" component={Disorganised}
                 options={{
                     title: "I Feel Disorganized",
                 }} />

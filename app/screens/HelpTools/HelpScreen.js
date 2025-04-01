@@ -11,7 +11,7 @@ export const HelpScreen = ({ navigation }) => { // home emotions emoji
     { name: "Unmotivated", colour: "#9999FF", navigate: () => navigation.navigate("Unmotivated"), img: require("../../../assets/images/unmotivated.png") },
     { name: "Overwhelmed", colour: "#FF9999", navigate: () => navigation.navigate("Overwhelmed"), img: require("../../../assets/images/overwhelmed.png") },
     { name: "Stuck", colour: "#FFCC99", navigate: () => navigation.navigate("Stuck"), img: require("../../../assets/images/stuck.png") },
-    { name: "Disorganized", colour: "#99CCFF", navigate: () => navigation.navigate("Disorganized"), img: require("../../../assets/images/disorganised.png") },
+    { name: "Disorganised", colour: "#99CCFF", navigate: () => navigation.navigate("Disorganised"), img: require("../../../assets/images/disorganised.png") },
   ];
 
   return (

@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ThemeContext } from "../../../contexts/ThemeContext";
 
-const Disorganized = ({ navigation }) => {
+const Disorganised = ({ navigation }) => {
     const { theme } = useContext(ThemeContext);
 
     return (
@@ -24,4 +24,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default Disorganized;
+export default Disorganised;

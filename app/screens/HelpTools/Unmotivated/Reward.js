@@ -190,12 +190,12 @@ const Reward = ({ navigation }) => {
 
                 {/* add and delete btns */}
                 <View style={styles.btnsView}>
-                    <TouchableOpacity style={styles.btn} onPress={() => setOpenModal(true)}>
-                        <AntDesign name="plus" size={26} color={theme.tab} />
+                    <TouchableOpacity style={[styles.btn, { backgroundColor: theme.name === "light" ? "#4B4697" : "#7C7A97" }]} onPress={() => setOpenModal(true)}>
+                        <AntDesign name="plus" size={26} color="#FFFFFF" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.btn, { backgroundColor: theme.delete }]}
+                    <TouchableOpacity style={[styles.btn, { backgroundColor: theme.name === "light" ? "#9B1515" : "#808080" }]}
                         onPress={() => setRemove(!remove)}>
-                        <AntDesign name={remove ? "check" : "delete"} size={26} color={theme.tab} />
+                        <AntDesign name={remove ? "check" : "delete"} size={26} color="#FFFFFF" />
                     </TouchableOpacity>
                 </View>
 
@@ -335,7 +335,6 @@ const useStyles = (theme) => StyleSheet.create({
     btn: {
         width: 45,
         height: 45,
-        backgroundColor: theme.primary,
         padding: 5,
         alignItems: "center",
         justifyContent: "center",
