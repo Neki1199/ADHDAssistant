@@ -5,11 +5,10 @@ import { ListsContext } from "../../../contexts/ListsContext";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Calendar } from "react-native-calendars";
 import { AntDesign } from '@expo/vector-icons';
-import { sortTasks, TasksContext } from '../../../contexts/TasksContext';
+import { sortTasks } from '../../../contexts/TasksContext';
 import TaskItem from "../Components/TaskItem";
 import dayjs from "dayjs";
 import { ThemeContext } from '../../../contexts/ThemeContext';
-
 
 export const setColour = (allLists) => {
     const colours = ["#CC0000", "#FF8000", "#FFD546", "#66CC00", "#0080FF", "#7F00FF", "#3399FF", "#F253A3"]

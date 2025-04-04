@@ -5,7 +5,6 @@ import AntDesign from "react-native-vector-icons/AntDesign";
 import { CountdownCircleTimer } from "react-native-countdown-circle-timer"
 import { setCompleted } from "../../../contexts/TasksDB";
 import { ThemeContext } from '../../../contexts/ThemeContext';
-import { restartTimer } from './DurationBreak';
 
 const TaskTimer = ({ route, navigation }) => {
     const { task, taskBreak, breakCounter, durationWithBreak } = route.params;
