@@ -70,11 +70,6 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
         // only if there is a date and reminder time set
         if (taskDetails.Reminder.value && taskDetails.Date.value) {
             const reminderTime = dayjs(`${date} ${taskDetails.Reminder.value}`, "YYYY-MM-DD HH:mm").toDate(); // values: date and time
-            console.log(reminderTime);
-            const trigger = new Date(Date.now() + 60 * 60 * 1000);
-            trigger.setMinutes(0);
-            trigger.setSeconds(0);
-            console.log(trigger)
             scheduleNotification(reminderTime, `Remember your task "${name}". Starts at ${taskDetails.Reminder.value}`, parentID, taskID);
         }
     };

@@ -131,7 +131,7 @@ const BottomTabs = () => {
                 tabBarStyle: {
                     backgroundColor: theme.linear2,
                     borderColor: "transparent",
-                    height: 60,
+                    height: 70,
                     elevation: 0,
                     shadowOpacity: 0
                 },

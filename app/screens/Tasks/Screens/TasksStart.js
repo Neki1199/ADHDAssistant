@@ -25,7 +25,6 @@ export default function TasksStart({ route, navigation }) {
     }, [task]);
 
     return (
-        // to touch outside when input writing
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <LinearGradient
                 colors={[theme.header, theme.linear2]}

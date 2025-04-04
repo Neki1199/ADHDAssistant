@@ -224,7 +224,7 @@ const Reward = ({ navigation }) => {
                         />
                     </View>
                     {/* tasks container */}
-                    <View style={{ height: 190, width: "90%", backgroundColor: theme.header, borderRadius: 15, marginTop: 5 }}>
+                    <View style={{ height: 190, width: "90%", borderRadius: 15, marginTop: 5 }}>
                         <FlatList
                             showsHorizontalScrollIndicator={false}
                             contentContainerStyle={{ justifyContent: "center" }}

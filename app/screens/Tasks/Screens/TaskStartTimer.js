@@ -5,6 +5,7 @@ import AntDesign from "react-native-vector-icons/AntDesign";
 import { CountdownCircleTimer } from "react-native-countdown-circle-timer"
 import { setCompleted } from "../../../contexts/TasksDB";
 import { ThemeContext } from '../../../contexts/ThemeContext';
+import { restartTimer } from './DurationBreak';
 
 const TaskTimer = ({ route, navigation }) => {
     const { task, taskBreak, breakCounter, durationWithBreak } = route.params;
@@ -27,15 +28,15 @@ const TaskTimer = ({ route, navigation }) => {
             style={styles.gradient}>
 
             <View style={styles.containerInside}>
-                {/* ten second counter */}
+                {/* five second counter */}
                 {tenSecondsCounter && (
                     <>
                         <Text style={[styles.title, { fontSize: 30, padding: 20 }]}>Prepare Yourself</Text>
                         <CountdownCircleTimer
                             isPlaying={tenSecondsCounter}
-                            duration={10}
+                            duration={5}
                             colors={['#4B4697', '#7E4697', "#974674", "#CD0066", '#CC0000']}
-                            colorsTime={[10, 4, 3, 2, 0]}
+                            colorsTime={[5, 4, 3, 2, 0]}
                             strokeWidth={20}
                             trailStrokeWidth={10}
                             onComplete={() => {
@@ -70,7 +71,7 @@ const TaskTimer = ({ route, navigation }) => {
                 {/* task counter*/}
                 {!tenSecondsCounter && taskCounterVisible && !breakCounterVisible && (
                     <>
-                        <Text style={[styles.title, { fontSize: 30, padding: 20 }]}>{task.name} in process...</Text>
+                        <Text style={[styles.title, { fontSize: 30, padding: 20, color: "#FFFFFF" }]}>{task.name} in process...</Text>
                         <CountdownCircleTimer
                             isPlaying={startCounterTask}
                             duration={durationWithBreak}
@@ -152,7 +153,7 @@ const TaskTimer = ({ route, navigation }) => {
                     </>
                 )}
 
-                {/* bottom buttons whenn counter */}
+                {/* bottom buttons when counter */}
                 {(taskCounterVisible || breakCounterVisible) && (
                     <>
                         <View style={[styles.startBottom, { flexDirection: "row", justifyContent: "space-around", width: "80%" }]}>
@@ -171,27 +172,48 @@ const TaskTimer = ({ route, navigation }) => {
                                 </TouchableOpacity>
                             )}
                             {/* restart */}
-                            <TouchableOpacity onPress={() => navigation.navigate("DurationBreak", { task: task, restart: true, fromButton: true })}>
+                            <TouchableOpacity onPress={() =>
+                                navigation.reset({
+                                    index: 0,
+                                    routes: [{ name: "DurationBreak", params: { task: task, restart: true, fromButton: true } }]
+                                })}>
                                 <AntDesign name="reload1" size={45} color={startBreak ? (theme.name === "light" ? "#1D1869" : "#DDDBFF") : "#7A74C9"} />
                             </TouchableOpacity>
                         </View>
 
                         {/* completed btn*/}
-                        <TouchableOpacity style={styles.btn} onPress={async () => {
-                            try {
-                                // change task
-                                await setCompleted(task);
+                        <View style={{ flexDirection: "row", gap: 20 }}>
+                            <TouchableOpacity style={styles.btn} onPress={async () => {
+                                try {
+                                    // change task
+                                    await setCompleted(task);
 
-                                setTaskCounterVisible(false);
-                                setBreakCounterVisible(false);
-                                setStartBreak(false);
-                                navigation.navigate("Tasks", { listID: "Daily" })
-                            } catch (error) {
-                                console.error("Could not change task to completed: ", error)
-                            }
-                        }}>
-                            <Text style={styles.btnText}>Completed</Text>
-                        </TouchableOpacity>
+                                    setTaskCounterVisible(false);
+                                    setBreakCounterVisible(false);
+                                    setStartBreak(false);
+                                    navigation.navigate("Tabs", { screen: "Tasks" })
+                                } catch (error) {
+                                    console.error("Could not change task to completed: ", error)
+                                }
+                            }}>
+                                <Text style={styles.btnText}>Completed</Text>
+                            </TouchableOpacity>
+                            {/* button skip break */}
+                            {breakCounterVisible && !taskCounterVisible && (
+                                <TouchableOpacity style={[styles.btn, { width: 100, backgroundColor: theme.name === "light" ? "#1D1869" : "#DDDBFF" }]}
+                                    onPress={() => {
+                                        setBreakCounterVisible(false)
+                                        setTaskCounterVisible(true)
+                                        setStartCounterTask(true)
+
+                                        if (breakCounting > 0) {
+                                            setBreakCounter(breakCounting - 1);
+                                        }
+                                    }}>
+                                    <Text style={styles.btnText}>Skip Break</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
                     </>
                 )}
 
@@ -202,11 +224,16 @@ const TaskTimer = ({ route, navigation }) => {
                             style={styles.img} />
                         <Text style={styles.title}>Have you finished your task?</Text>
                         <View style={styles.btnCompletedContainer}>
-                            <TouchableOpacity style={[styles.btn, { width: 300, backgroundColor: theme.name === "light" ? "#211B75" : "#221D66" }]} onPress={restartTimer}>
+                            <TouchableOpacity style={[styles.btn, { width: 300, backgroundColor: theme.name === "light" ? "#211B75" : "#221D66" }]} onPress={
+                                () => navigation.reset({
+                                    index: 0,
+                                    routes: [{ name: "DurationBreak", params: { task: task, restart: true, fromButton: true } }]
+                                })
+                            }>
                                 <Text style={styles.btnText}>No, let me restart and change the timer</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={[styles.btn, { width: 300, backgroundColor: theme.name === "light" ? "#3E5CB0" : "#4B4697" }]} onPress={() => {
-                                navigation.navigate("Tasks", { lisID: "Daily" })
+                                navigation.navigate("Tabs", { screen: "Tasks" })
                                 setCompleted(task);
                             }}>
                                 <Text style={styles.btnText}>Yes! Mark task as completed</Text>

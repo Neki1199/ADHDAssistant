@@ -9,6 +9,7 @@ import {
 import { scheduleNotification } from '../screens/Tasks/Modals/NewTask/Notifications';
 import dayjs from 'dayjs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { deleteUser } from 'firebase/auth';
 
 // add a new task to a specific list
 export const addTask = async (name, date, time, reminder, repeat, duration, completed, list, completedDate, parentID = null) => {
@@ -648,4 +649,30 @@ export const deleteRepeatedTasks = async (task) => {
     } catch (error) {
         console.log("Could not delete parentID tasks: ", error)
     }
+};
+
+export const deleteAccount = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+        // delete data stored in firestore
+        const userRef = doc(db, "users", user.uid);
+        await deleteDoc(userRef);
+
+        await deleteUser(user); // delete user from authentication
+
+        Alert.alert(
+            "Account Deleted",
+            "Your account has been successfully deleted",
+            [{ text: "Try Again", style: "default" }]
+        );
+    } catch (error) {
+        Alert.alert(
+            "⚠️ Ups!",
+            "Error deleting account",
+            [{ text: "Try Again", style: "default" }]
+        );
+        console.log("Error deleting account: ", error);
+    };
 };

@@ -214,14 +214,10 @@ const DurationBreak = ({ route, navigation }) => {
                                 <Text style={[styles.taskText, { padding: 5 }]}>
                                     {taskBreak === "" ? "" : `Break set for ${taskBreak} mins`}
                                     {taskBreak === "" ? "" : breakRepeat === 0 ? "" : breakRepeat > 1 ? ` and ${breakRepeat} repeats` : " and 1 repeat"}
-
                                 </Text>
-                                <Text style={styles.taskText}>If you leave, your progress will be lost </Text>
 
                                 {/* start button */}
                                 <View style={styles.startBottom}>
-                                    <Text style={[styles.taskText, { fontSize: 26, color: theme.tabText }]}>When you are ready press the button</Text>
-                                    <Text style={[styles.taskText, { fontSize: 20 }]}>A ten second counter will start!</Text>
                                     <TouchableOpacity onPress={startCounter}>
                                         <AntDesign name="play" size={50} color={theme.tabText} />
                                     </TouchableOpacity>
@@ -268,7 +264,7 @@ const useStyles = (theme) => StyleSheet.create({
         borderRadius: 10
     },
     startBottom: {
-        paddingVertical: 30,
+        paddingVertical: 20,
         alignItems: "center",
         gap: 20
     },

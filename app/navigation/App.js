@@ -25,6 +25,14 @@ SplashScreen.preventAutoHideAsync();
 
 const Stack = createNativeStackNavigator();
 
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+    }),
+});
+
 const StackScreens = () => {
     const { theme } = useContext(ThemeContext);
 
@@ -93,18 +101,10 @@ const StackScreens = () => {
                         headerTitleAlign: "center",
                         headerLeft: () => (
                             <TouchableOpacity
-                                onPress={() => navigation.goBack()}
-                                style={{ paddingHorizontal: 15 }}
-                            >
-                                <AntDesign name="leftcircle" size={28} color="#FFFFFF" />
-                            </TouchableOpacity>
-                        ),
-                        headerRight: () => (
-                            <TouchableOpacity
                                 onPress={() => navigation.navigate("Tabs", { screen: "Tasks" })}
                                 style={{
                                     width: 30, height: 30, backgroundColor: "#FFFFFF", borderRadius: 20,
-                                    alignItems: "center", justifyContent: "center", right: 15
+                                    alignItems: "center", justifyContent: "center", left: 10
                                 }}
                             >
                                 <AntDesign name="home" size={20} color={theme.header} />

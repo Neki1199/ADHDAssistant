@@ -89,7 +89,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/logoADHD.png",
+          "icon": "./assets/images/notifLogo.png",
           "color": "#ffffff",
           "sounds": ["./assets/sounds/notification.wav"],
           "mode": "development"
@@ -107,7 +107,8 @@
       },
       "eas": {
         "projectId": "5a272480-5402-4f4b-a68e-35ab4f3a8b22"
-      }
+      },
+      "FIREBASE_API_KEY": "AIzaSyA9EBWwX1HDOm3UC6E7SqaIN-0s0zOWocg"
     }
   }
 }
