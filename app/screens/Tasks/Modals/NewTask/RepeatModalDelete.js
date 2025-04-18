@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { View, StyleSheet, Text, TouchableOpacity, Modal } from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity, Modal, TouchableWithoutFeedback } from "react-native";
 import { deleteTask, deleteRepeatedTasks } from "../../../../contexts/TasksDB";
 import { ThemeContext } from "../../../../contexts/ThemeContext";
 import { removeNotification, removeRepeatNotifications } from "./Notifications";
@@ -18,26 +18,28 @@ export const RepeatModalDelete = ({ modalDelete, setModalDelete, task }) => {
 
     return (
         <Modal visible={modalDelete} transparent={true} animationType="fade">
-            <View style={styles.modalContainer}>
-                <View style={styles.modalInside}>
-                    {/* delete only task selected */}
-                    <TouchableOpacity style={[styles.btn, { marginTop: 0 }]} onPress={() => {
-                        deleteTask(task);
-                        removeNotification(task.id);
-                        setModalDelete(false);
-                    }}>
-                        <Text style={styles.textModal}>Delete Task</Text>
-                    </TouchableOpacity>
-                    {/* delete all tasks, including repeated */}
-                    <TouchableOpacity style={styles.btn} onPress={() =>
-                        // remove all repeated tasks and notifications
-                        deleteAll()
-                    }>
-                        <Text style={styles.textModal}>Delete All Tasks</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.textModalBottom}>Included repeated tasks</Text>
+            <TouchableWithoutFeedback onPress={() => setModalDelete(false)} accessible={false}>
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalInside}>
+                        {/* delete only task selected */}
+                        <TouchableOpacity style={[styles.btn, { marginTop: 0 }]} onPress={() => {
+                            deleteTask(task);
+                            removeNotification(task.id);
+                            setModalDelete(false);
+                        }}>
+                            <Text style={styles.textModal}>Delete Task</Text>
+                        </TouchableOpacity>
+                        {/* delete all tasks, including repeated */}
+                        <TouchableOpacity style={[styles.btn, { backgroundColor: theme.activetab }]} onPress={() =>
+                            // remove all repeated tasks and notifications
+                            deleteAll()
+                        }>
+                            <Text style={styles.textModal}>Delete All Tasks</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.textModalBottom}>Included repeated tasks</Text>
+                    </View>
                 </View>
-            </View>
+            </TouchableWithoutFeedback>
         </Modal>
     );
 };
@@ -55,7 +57,7 @@ const useStyles = (theme) => StyleSheet.create({
         alignItems: "center",
         height: "20%",
         width: "55%",
-        borderRadius: 30
+        borderRadius: 20
     },
     btn: {
         marginTop: 20,
@@ -64,12 +66,12 @@ const useStyles = (theme) => StyleSheet.create({
         backgroundColor: theme.primary,
         width: 200,
         height: 50,
-        borderRadius: 30
+        borderRadius: 15
     },
     textModal: {
         fontFamily: "Zain-Regular",
         fontSize: 18,
-        color: theme.text
+        color: "#FFFFFF"
     },
     textModalBottom: {
         fontFamily: "Zain-Regular",

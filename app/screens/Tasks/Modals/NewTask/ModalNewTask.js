@@ -66,11 +66,11 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
         setListsItems(getLists());
     }, [allLists]);
 
-    const addNotification = async (date, parentID, taskID, taskDetails) => {
+    const addNotification = async (date, parentID, taskID, taskDetails, time) => {
         // only if there is a date and reminder time set
         if (taskDetails.Reminder.value && taskDetails.Date.value) {
             const reminderTime = dayjs(`${date} ${taskDetails.Reminder.value}`, "YYYY-MM-DD HH:mm").toDate(); // values: date and time
-            scheduleNotification(reminderTime, `Remember your task "${name}". Starts at ${taskDetails.Reminder.value}`, parentID, taskID);
+            scheduleNotification(reminderTime, `Remember your task "${name}". Starts at ${time}`, parentID, taskID);
         }
     };
 
@@ -201,7 +201,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
 
             const parentID = newTask.id;
             // add reminder for the main task (the add notification already handles if there is date and reminder set)
-            await addNotification(taskDetails.Date.value, parentID, parentID, taskDetails);
+            await addNotification(taskDetails.Date.value, parentID, parentID, taskDetails, time);
 
             if (repeat.type !== "Once") {
                 const datesRepeat = getDatesRepeat(repeat.starts, repeat);
@@ -273,7 +273,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                 await Promise.all([
                     changeTask(task, newData),
                     removeNotification(task.id),
-                    addNotification(newData.date, parentID, task.id, taskDetails)
+                    addNotification(newData.date, parentID, task.id, taskDetails, newData.time)
                 ]);
             } else {
                 // remove all repeated tasks and notif
@@ -287,7 +287,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                 // if now is once, and it wasnt
                 if (newData.repeat.type === "Once") {
                     const newTask = await addTask(newData); // add new task
-                    await addNotification(newData.date, newTask.id, newTask.id, taskDetails);
+                    await addNotification(newData.date, newTask.id, newTask.id, taskDetails, newData.time);
                 } else { // add new repeated
                     await saveTask();
                 }
@@ -306,7 +306,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
     };
 
     return (
-        <Modal visible={modalVisible} transparent={true} animationType="none">
+        <Modal visible={modalVisible} transparent={true} animationType="slide">
             <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                 <View style={styles.modalContainer}>
                     <View style={[styles.modalInside, task && { height: "78%" }]}>
@@ -346,7 +346,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                                                     }}>
                                                         <Text style={[styles.modalTitle, { color: "#FFFFFF" }]}>This Task</Text>
                                                     </TouchableOpacity>
-                                                    <TouchableOpacity style={[styles.btn, { backgroundColor: theme.title }]} onPress={() => {
+                                                    <TouchableOpacity style={[styles.btn, { backgroundColor: theme.activetab }]} onPress={() => {
                                                         change();
                                                         setChangeModalVisible(false);
                                                     }}>
@@ -488,10 +488,11 @@ const useStyles = (theme) => StyleSheet.create({
     },
     btn: {
         marginBottom: 20,
-        backgroundColor: theme.header,
+        backgroundColor: theme.primary,
         width: 200,
         padding: 5,
-        borderRadius: 10
+        borderRadius: 10,
+        height: 45
     }
 });
 

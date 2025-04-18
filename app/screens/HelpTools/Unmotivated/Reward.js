@@ -251,7 +251,7 @@ const Reward = ({ navigation }) => {
                 </View>
 
                 {openModal && (
-                    <Modal visible={openModal} transparent={true} animationType="none">
+                    <Modal visible={openModal} transparent={true} animationType="fade">
                         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                             <View style={styles.modalContainer}>
                                 <View style={styles.modalInside}>
