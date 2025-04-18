@@ -66,7 +66,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
         setListsItems(getLists());
     }, [allLists]);
 
-    const addNotification = async (date, parentID, taskID, taskDetails, time) => {
+    const addNotification = async (date, parentID, taskID, taskDetails) => {
         // only if there is a date and reminder time set
         if (taskDetails.Reminder.value && taskDetails.Date.value) {
             const reminderTime = dayjs(`${date} ${taskDetails.Reminder.value}`, "YYYY-MM-DD HH:mm").toDate(); // values: date and time
@@ -201,7 +201,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
 
             const parentID = newTask.id;
             // add reminder for the main task (the add notification already handles if there is date and reminder set)
-            await addNotification(taskDetails.Date.value, parentID, parentID, taskDetails, time);
+            await addNotification(taskDetails.Date.value, parentID, parentID, taskDetails);
 
             if (repeat.type !== "Once") {
                 const datesRepeat = getDatesRepeat(repeat.starts, repeat);
@@ -273,7 +273,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                 await Promise.all([
                     changeTask(task, newData),
                     removeNotification(task.id),
-                    addNotification(newData.date, parentID, task.id, taskDetails, newData.time)
+                    addNotification(newData.date, parentID, task.id, taskDetails)
                 ]);
             } else {
                 // remove all repeated tasks and notif
@@ -287,7 +287,7 @@ const ModalNewTask = ({ modalVisible, setModalVisible, list, task = null }) => {
                 // if now is once, and it wasnt
                 if (newData.repeat.type === "Once") {
                     const newTask = await addTask(newData); // add new task
-                    await addNotification(newData.date, newTask.id, newTask.id, taskDetails, newData.time);
+                    await addNotification(newData.date, newTask.id, newTask.id, taskDetails);
                 } else { // add new repeated
                     await saveTask();
                 }

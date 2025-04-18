@@ -63,7 +63,7 @@ const RepeatSelection = ({ showRepeatModal, setShowRepeatModal, date = 1, setRep
 
     // don't go more than 31
     const handleMonth = (value) => {
-        const newVal = value.replace(/^0+(?=\d)/, "");
+        const newVal = value.replace(/^0+(?=\d)/, ""); // remove 0 or +0 if there are digits after it (or just let one 0 if no digit)
         if (newVal > 31) {
             setDayMonth("31");
         } else {
